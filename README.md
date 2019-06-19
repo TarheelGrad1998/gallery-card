@@ -21,7 +21,7 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
         - platform: files
           folder: /config/www/images
           name: gallery_images
-	  sort: date
+          sort: date
     ```
 7. Restart Home Assistant
 8. Check the sensor.gallery_images entity to see if the `fileList` attribute lists your files
@@ -41,7 +41,7 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
 2.  Copy the gallery.html file into the `panels` folder
 3.  Add the gallery panel to your configuration.yaml file
     ```yaml
-	panel_custom:
+    panel_custom:
       - name: gallery
 	    sidebar_title: My Gallery
             sidebar_icon: mdi:cctv
