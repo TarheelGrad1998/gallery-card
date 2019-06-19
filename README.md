@@ -52,7 +52,7 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
 	          entity_id: sensor.gallery_images
 	          file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
 	          caption_format: "%m/%d %H:%M %p"
-	          maximum_files: 5			  
+	          maximum_files: 10			  
     ```
 4. Restart Home Assistant
 5. Check the Panel appears in the sidebar
