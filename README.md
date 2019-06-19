@@ -20,8 +20,8 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
     - sensor
         - platform: files
           folder: /config/www/images
-		  name: gallery_images
-		  sort: date
+          name: gallery_images
+	  sort: date
     ```
 7. Restart Home Assistant
 8. Check the sensor.gallery_images entity to see if the `fileList` attribute lists your files
@@ -44,15 +44,15 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
 	panel_custom:
       - name: gallery
 	    sidebar_title: My Gallery
-		sidebar_icon: mdi:cctv
-		config:
-		  title: My Gallery
-		  tabs:
-            - name: Images
-              entity_id: sensor.gallery_images
-              maximum_files: 10
-              file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
-              caption_format: "%m/%d %H:%M %p"			  
+            sidebar_icon: mdi:cctv
+            config: 
+	      title: My Gallery
+              tabs:
+	      - name: Images
+                entity_id: sensor.gallery_images
+                maximum_files: 10
+                file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
+                caption_format: "%m/%d %H:%M %p"			  
     ```
 4. Restart Home Assistant
 5. Check the Panel appears in the sidebar
