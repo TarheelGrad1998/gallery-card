@@ -41,18 +41,18 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
 2.  Copy the gallery.html file into the `panels` folder
 3.  Add the gallery panel to your configuration.yaml file
     ```yaml
-panel_custom:
-  - name: gallery
-    sidebar_title: Front Door (Kuna)
-    sidebar_icon: mdi:cctv
-    config:
-      title: Front Door
-      tabs:
-        - name: Videos
-          entity_id: sensor.gallery_images
-          file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
-          caption_format: "%m/%d %H:%M %p"
-          maximum_files: 5			  
+	panel_custom:
+	  - name: gallery
+	    sidebar_title: Front Door (Kuna)
+	    sidebar_icon: mdi:cctv
+	    config:
+	      title: Front Door
+	      tabs:
+	        - name: Videos
+	          entity_id: sensor.gallery_images
+	          file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
+	          caption_format: "%m/%d %H:%M %p"
+	          maximum_files: 5			  
     ```
 4. Restart Home Assistant
 5. Check the Panel appears in the sidebar
