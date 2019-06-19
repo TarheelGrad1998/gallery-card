@@ -1,6 +1,7 @@
 # Gallery Panel
 
 Custom panel for Home Assistant's UI LoveLace which will display images and videos in the style of a gallery.
+
 This was developed for use alongside the [component for Kuna cameras](https://github.com/marthoc/kuna) but should work with any images/videos, in theory.
 
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryPanel/raw/master/screenshot.png)
@@ -69,6 +70,7 @@ A config entry of one or more tabs is required.  Each tab can be configured as f
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
 
 The captions under the image/video is formatted using file_name_format and caption_format.  If either is ommitted, the raw filename is used.
+
 The assumption is that the file name contains the date formatted such that it can be parsed and formatted for easier human consumption.  
 Use the following placeholders for the date components:
 
