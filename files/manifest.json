@@ -1,0 +1,8 @@
+{
+    "domain": "files",
+    "name": "Files in a Folder",
+    "documentation": "https://www.example.com",
+    "dependencies": [],
+    "codeowners": [],
+    "requirements": []
+  }
