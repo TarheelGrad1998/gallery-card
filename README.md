@@ -63,7 +63,7 @@ A config entry of one or more tabs is required.  Each tab can be configured as f
 
 | Name | Type | Default | Description
 | ---- | ---- | ------- | -----------
-| name | string | **Required** | The name of the tab at the top of the screen
+| name | string | **Required** | The name of the tab at the top of the screen.  Only displayed if more than one tab is defined.
 | entity_id | string | **Required** | The entity_id of the files sensor added above
 | maximum_files | string | **Optional** | The number of files to show in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 by date will be shown)
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.
