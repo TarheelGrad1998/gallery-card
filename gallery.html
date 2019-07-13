@@ -117,7 +117,7 @@
             <div main-title id="main-title-text">{{panel.config.title}}</div>
           </div>
         </app-toolbar>
-        <paper-tabs role="tablist">
+        <paper-tabs role="tablist" hidden$="[[hasOneTab()]]">
           <template is="dom-repeat" items="{{panel.config.tabs}}">
             <paper-tab role="tab" on-tap="switchTab">{{item.name}}</paper-tab>
           </template>
@@ -205,6 +205,9 @@ Polymer({
     else {
       return false;
     }
+  },
+  hasOneTab: function() {
+    return (this.panel.config.tabs.length === 1);
   },
   imageMenuClick: function(e) {
   	this.autoPlayVideo = true;
