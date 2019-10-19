@@ -254,7 +254,7 @@ Polymer({
       // /config/www/...
       var imageLocation = path.replace("/config/www/", "/local/");
       if (path.indexOf("/config/www/") < 0)
-        imageLocation = "/local/" + path.substring(testPath.indexOf("/www/")+5);
+        imageLocation = "/local/" + path.substring(path.indexOf("/www/")+5);
       
       var arPath = path.split("/");
 
