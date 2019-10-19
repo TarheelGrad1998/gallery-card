@@ -252,8 +252,10 @@ Polymer({
       var path = paths[i];
       // /config/downloads/front_door/
       // /config/www/...
-      //var imageLocation = "/local" + path.substring(11);
       var imageLocation = path.replace("/config/www/", "/local/");
+      if (path.indexOf("/config/www/") < 0)
+        imageLocation = "/local/" + path.substring(testPath.indexOf("/www/")+5);
+      
       var arPath = path.split("/");
 
       var imageName = arPath[arPath.length - 1];
