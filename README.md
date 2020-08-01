@@ -65,6 +65,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
 
+## Menu Alignment
 Available options for Menu Alignment are below:
 
 | Value | Description
@@ -76,6 +77,7 @@ Available options for Menu Alignment are below:
 | Botom | Always shows a vertical list on the bottom of the card.
 | Hidden | Hides the list and only shows the larger image
 
+## Caption Configuration
 The captions under the image/video is formatted using file_name_format and caption_format.  If either is ommitted, the raw filename is used.
 
 The assumption is that the file name contains the date formatted such that it can be parsed and formatted for easier human consumption.  
