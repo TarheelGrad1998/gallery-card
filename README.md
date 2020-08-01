@@ -42,7 +42,7 @@ For more details, see [Thomas Loven's Install Guide](https://github.com/thomaslo
 2.  Add the card within the resources section (Config -> Lovelace Dashboards -> Resources)
     URL: /local/cards/gallery-card.js
     Type: Javascript Module
-3.  Add the gallery card to your Lovelace configuration.  Use of the editor is preferred, but the below example is if using the code example:
+3.  Add the gallery card to your Lovelace configuration.  Use of the viual editor is preferred, but the below example is if using the code editor:
     ```
     type: 'custom:gallery-card'
     entity: sensor.gallery_images
