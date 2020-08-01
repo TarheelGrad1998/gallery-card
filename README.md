@@ -1,10 +1,10 @@
-# Gallery Panel
+# Gallery Card
 
-Custom panel for Home Assistant's UI LoveLace which will display images and videos in the style of a gallery.
+Custom card for Home Assistant's UI LoveLace which will display images and videos in the style of a gallery.
 
 This was developed for use alongside the [component for Kuna cameras](https://github.com/marthoc/kuna) but should work with any images/videos, in theory.
 
-![Screenshot](https://github.com/TarheelGrad1998/GalleryPanel/raw/master/screenshot.png)
+![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
 ## Installation - Files Component
 
@@ -35,39 +35,46 @@ Files that will appear in the gallery must be in the WWW folder, ideally in a su
 | name | string | **Required** | The entity ID for the sensor
 | sort | string | **Optional** | One of 'name', 'date', or 'size';  Determines how files are sorted in the Gallery, `Default: date`
 
-## Installation - Gallery Panel
+## Installation - Gallery Card
+For more details, see [Thomas Loven's Install Guide](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
 
-1.  Create a folder in your `config` directory named `panels`
-2.  Copy the gallery.html file into the `panels` folder
-3.  Add the gallery panel to your configuration.yaml file
-    ```yaml
-	panel_custom:
-	  - name: gallery
-	    sidebar_title: Front Door (Kuna)
-	    sidebar_icon: mdi:cctv
-	    config:
-	      title: Front Door
-	      tabs:
-	        - name: Videos
-	          entity_id: sensor.gallery_images
-	          file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
-	          caption_format: "%m/%d %H:%M %p"
-	          maximum_files: 10			  
+1.  Place the `gallary-card.js` file under your `/config/www/` folder of Home Assistant (suggest - create a subdirectory for `cards`)
+2.  Add the card within the resources section (Config -> Lovelace Dashboards -> Resources)
+    URL: /local/cards/gallery-card.js
+    Type: Javascript Module
+3.  Add the gallery card to your Lovelace configuration.  Use of the editor is preferred, but the below example is if using the code example:
     ```
-4. Restart Home Assistant
-5. Check the Panel appears in the sidebar
+    type: 'custom:gallery-card'
+    entity: sensor.gallery_images
+    menu_alignment: Responsive
+    maximum_files: 10
+    file_name_format: '%YYY_%m_%d_%H_%M_%S'
+    caption_format: '%m/%d %H:%M %p'  
+    ```
+I recommend adding the card to a view set to Panel Mode for best results.
 
-### Configuration Variables - Gallery Panel
-
-A config entry of one or more tabs is required.  Each tab can be configured as follows
+### Configuration Variables - Gallery Card
+Whether using the editor or yaml, the following configurations can be used:
 
 | Name | Type | Default | Description
 | ---- | ---- | ------- | -----------
-| name | string | **Required** | The name of the tab at the top of the screen.  Only displayed if more than one tab is defined.
-| entity_id | string | **Required** | The entity_id of the files sensor added above
-| maximum_files | string | **Optional** | The number of files to show in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 by date will be shown)
+| entity | string | **Required** | The entity_id of the files sensor added above
+| title | string | **Optional** | The name to show at the top of the card.  
+| menu_alignment | string | **Optional** | Alignment of the menu (the small list of images/videos to view).  Default is if not specified is Responsive (see below)
+| maximum_files | integer | **Optional** | The number of files to show in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 by date will be shown)
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
+
+Available options for Menu Alignment are below:
+
+| Value | Description
+| ----------- | -----------
+| Responsive | On wider views (e.g. landscape >= 600px) uses the Right alignment, on narrower views (e.g. portrait < 600px) the Bottom
+| Left | Always shows a vertical list on the left of the card.
+| Right | Always shows a vertical list on the right of the card (shown in the image above).
+| Top | Always shows a horizontal list on the top of the card.
+| Botom | Always shows a vertical list on the bottom of the card.
+| Hidden | Hides the list and only shows the larger image
 
 The captions under the image/video is formatted using file_name_format and caption_format.  If either is ommitted, the raw filename is used.
 
