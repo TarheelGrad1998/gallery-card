@@ -337,6 +337,7 @@ class GalleryCard extends LitElement {
       .menu-bottom .resource-menu figure {
         margin: 0px;
         padding: 12px;
+        width: 25%;
       }
       .menu-bottom .resource-viewer figure img,
       .menu-bottom .resource-viewer figure video {
@@ -396,6 +397,7 @@ class GalleryCard extends LitElement {
       .menu-top .resource-menu figure {
         margin: 0px;
         padding: 12px;
+        width: 25%;
       }
       .menu-top .resource-viewer figure img,
       .menu-top .resource-viewer figure video {
