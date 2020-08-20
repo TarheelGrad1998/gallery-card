@@ -4,6 +4,8 @@ Custom card for Home Assistant's UI LoveLace which will display images and video
 
 This was developed for use alongside the [component for Kuna cameras](https://github.com/marthoc/kuna) but should work with any images/videos, in theory.
 
+New in v2.0 - support for selecting Camera entities in addition to the Files Component entities.  
+
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
 ## Installation - Files Component
@@ -45,7 +47,9 @@ For more details, see [Thomas Loven's Install Guide](https://github.com/thomaslo
 3.  Add the gallery card to your Lovelace configuration.  Use of the viual editor is preferred, but the below example is if using the code editor:
     ```
     type: 'custom:gallery-card'
-    entity: sensor.gallery_images
+    entities:
+      - camera.front_door
+      - sensor.gallery_images
     menu_alignment: Responsive
     maximum_files: 10
     file_name_format: '%YYY_%m_%d_%H_%M_%S'
@@ -58,7 +62,7 @@ Whether using the editor or yaml, the following configurations can be used:
 
 | Name | Type | Default | Description
 | ---- | ---- | ------- | -----------
-| entity | string | **Required** | The entity_id of the files sensor added above
+| entities | string | **Required** | A list of entity_id of the files sensor added above or of camera entities.  
 | title | string | **Optional** | The name to show at the top of the card.  
 | menu_alignment | string | **Optional** | Alignment of the menu (the small list of images/videos to view).  Default is if not specified is Responsive (see below)
 | maximum_files | integer | **Optional** | The number of files to show in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 by date will be shown)
