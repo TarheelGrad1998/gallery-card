@@ -18,23 +18,28 @@ class GalleryCard extends LitElement {
   }
 
   render() {
-    const entityId = this.config.entity;
-    const entityState = this.hass.states[entityId];
+    this._loadResources();
     const menuAlignment = (this.config.menu_alignment || "responsive").toLowerCase();
-    const maximumFiles = this.config.maximum_files;
-    const fileNameFormat = this.config.file_name_format;
-    const captionFormat = this.config.caption_format;
-    this._loadResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, captionFormat);
 
     return html`
         <ha-card .header=${this.config.title} class="menu-${menuAlignment}">
           <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}">
             <figure>
-              ${this._isImageExtension(this._currentResource().extension) ?
+              ${
+                this._currentResource().isHass ?
+                html`<hui-image
+                    .hass=${this.hass}
+                    .cameraImage=${this._currentResource().name}
+                    .cameraView=${"live"}
+                  ></hui-image>` :
+                this._isImageExtension(this._currentResource().extension) ?
                 html`<img src="${this._currentResource().url}"/>` :
                 html`<video controls src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
               }
-              <figcaption>${this._currentResource().caption} <span class="duration"></span></figcaption>
+              <figcaption>${this._currentResource().caption} 
+                ${this._isImageExtension(this._currentResource().extension) ?
+                  html`` : html`<span class="duration"></span>` }
+              </figcaption>
             </figure>  
             <button class="btn btn-left" @click="${ev => this._selectResource(this.currentResourceIndex-1)}">&lt;</button> 
             <button class="btn btn-right" @click="${ev => this._selectResource(this.currentResourceIndex+1)}">&gt;</button> 
@@ -43,7 +48,14 @@ class GalleryCard extends LitElement {
             ${this.resources.map(resource => {
                 return html`
                     <figure id="resource${resource.index}" data-imageIndex="${resource.index}" @click="${ev => this._selectResource(resource.index)}" class="${(resource.index == this.currentResourceIndex) ? 'selected' : ''}">
-                    ${this._isImageExtension(resource.extension) ?
+                    ${
+                      resource.isHass ?
+                      html`<hui-image
+                          .hass=${this.hass}
+                          .cameraImage=${resource.name}
+                          .cameraView=${"live"}
+                        ></hui-image>` :
+                      this._isImageExtension(resource.extension) ?
                       html`<img src="${resource.url}"/>` :
                       html`<video src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" ></video>`
                     }
@@ -57,10 +69,19 @@ class GalleryCard extends LitElement {
   }
 
   setConfig(config) {
-    if (!config.entity) {
-      throw new Error("Required configuration for entity is missing");
+    if (!config.entity && !config.entities) {
+      throw new Error("Required configuration for entities is missing");
     }
+
     this.config = config;
+    if (this.config.entity) {
+      if (!this.config.entities) {
+        this.config = { ...this.config, entities: [] };
+      }
+      this.config.entities.push(this.config.entity);
+      delete this.config.entity;
+    }
+
     this.currentResourceIndex = 0;
   }
 
@@ -167,9 +188,38 @@ class GalleryCard extends LitElement {
       this.yDown = null;                                            
   };
 
-  _loadResources(files, maximumFiles, fileNameFormat, captionFormat) {
+  _loadResources() {
     this.resources = [];
 
+    const maximumFiles = this.config.maximum_files;
+    const fileNameFormat = this.config.file_name_format;
+    const captionFormat = this.config.caption_format;
+
+    this.config.entities.forEach(entityId => {
+      var entityState = this.hass.states[entityId];
+
+      if (entityState.attributes.entity_picture != undefined)
+        this._loadCameraResource(entityId, entityState);
+
+      if (entityState.attributes.fileList != undefined)
+        this._loadFilesResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, captionFormat);
+    });
+  }
+
+  _loadCameraResource(entityId, camera) {
+    var resource = {
+      url: camera.attributes.entity_picture,
+      name: entityId,
+      extension: "jpg",
+      caption: camera.attributes.friendly_name ?? entityId,
+      index: this.resources.length,
+      isHass: true
+    }
+  
+    this.resources.push(resource);
+  }
+
+  _loadFilesResources(files, maximumFiles, fileNameFormat, captionFormat) {
     if (!files)
       return;
 
@@ -431,6 +481,13 @@ class GalleryCardEditor extends LitElement {
 
   setConfig(config) {
     this._config = config;
+    if (this._config.entity) {
+      if (!this._config.entities) {
+        this._config = { ...this._config, entities: [] };
+      }
+      this._config.entities.push(this._config.entity);
+      delete this._config.entity;
+    }
 
     this._fileNameExample =  "Your_File_Name";
     if (this._config.file_name_format && this._config.file_name_format != "") {
@@ -460,8 +517,8 @@ class GalleryCardEditor extends LitElement {
     return this._config.menu_alignment || "Responsive";
   }
 
-  get _entity() {
-    return this._config.entity || "";
+  get _entities() {
+    return this._config.entities || [];
   }
 
   get _maximumFiles() {
@@ -513,59 +570,74 @@ class GalleryCardEditor extends LitElement {
     return html`
     <div class="card-config">
     <div class="side-by-side">
-      <paper-input
-        .label="${this.hass.localize(
-          "ui.panel.lovelace.editor.card.generic.title"
-        )} (${this.hass.localize(
-          "ui.panel.lovelace.editor.card.config.optional"
-        )})"
-        .value="${this._title}"
-        .configValue="${"title"}"
-        @value-changed="${this._valueChanged}"
-      ></paper-input>
-      <paper-dropdown-menu 
-        .label="${"Alignment of Image/Video Menu"}
-        (${this.hass.localize(
-          "ui.panel.lovelace.editor.card.config.optional"
-        )})"
-        .value="${this._menuAlignment}" 
-        .configValue="${"menu_alignment"}" 
-        @value-changed="${this._valueChanged}" >
-        <paper-listbox slot="dropdown-content">
-          <paper-item>Responsive</paper-item>
-          <paper-item>Left</paper-item>
-          <paper-item>Right</paper-item>
-          <paper-item>Top</paper-item>
-          <paper-item>Bottom</paper-item>
-          <paper-item>Hidden</paper-item>
-        </paper-listbox>
-      </paper-dropdown-menu>
-    </div>
-    <div class="side-by-side">
-      <paper-dropdown-menu 
-        .label="${this.hass.localize(
-          "ui.panel.lovelace.editor.card.generic.entity"
+      <div>
+        <h4>${this.hass.localize(
+          "ui.panel.lovelace.editor.card.generic.entities"
         )} (${this.hass.localize(
           "ui.panel.lovelace.editor.card.config.required"
-        )})"
-        .value="${this._entity}" 
-        .configValue="${"entity"}" 
-        @value-changed="${this._valueChanged}" >
-        <paper-listbox slot="dropdown-content">
-          ${Object.keys(this.hass.states).filter(entId => this.hass.states[entId].attributes.fileList != undefined).sort().map(entId => html`
-                <paper-item>${entId}</paper-item>
-            `)}
-        </paper-listbox>
-      </paper-dropdown-menu>
-      <paper-input
-        .label="${"Maximum files to display"}
-        (${this.hass.localize(
-          "ui.panel.lovelace.editor.card.config.optional"
-        )})"
-        .value="${this._maximumFiles}"
-        .configValue="${"maximum_files"}"
-        @value-changed="${this._valueChanged}"
-      ></paper-input>
+        )})</h4>
+        <div class="entity-list">
+          ${this._entities.map((entity, index) => {
+            return html`
+                <div style="display:flex; align-items: center;">
+                  <ha-icon icon="hass:folder-image"></ha-icon>
+                  <span style="flex-grow:1;">${entity}</span>
+                  <ha-icon-button icon="hass:arrow-down" .index="${index}" .moveDirection="${1}" @click="${this._moveEntity}"></ha-icon-button>
+                  <ha-icon-button icon="hass:arrow-up" .index="${index}" .moveDirection="${-1}" @click="${this._moveEntity}"></ha-icon-button>
+                  <ha-icon-button icon="hass:close" .index="${index}" @click="${this._deleteEntity}"></ha-icon-button>
+                </div>
+            `;
+          })} 
+        </div>
+        <div style="display:flex; align-items: center;">  
+          <paper-dropdown-menu style="flex-grow:1;"
+          @value-changed="${this._addEntity}">
+            <paper-listbox slot="dropdown-content">
+              ${Object.keys(this.hass.states).filter(entId => entId.startsWith('camera.') || this.hass.states[entId].attributes.fileList != undefined).sort().map(entId => html`
+                    <paper-item>${entId}</paper-item>
+                `)}
+            </paper-listbox>
+          </paper-dropdown-menu>
+        </div>
+      </div>
+      <div>
+        <paper-input
+          .label="${this.hass.localize(
+            "ui.panel.lovelace.editor.card.generic.title"
+          )} (${this.hass.localize(
+            "ui.panel.lovelace.editor.card.config.optional"
+          )})"
+          .value="${this._title}"
+          .configValue="${"title"}"
+          @value-changed="${this._valueChanged}"
+        ></paper-input>
+        <paper-dropdown-menu 
+          .label="${"Alignment of Image/Video Menu"}
+          (${this.hass.localize(
+            "ui.panel.lovelace.editor.card.config.optional"
+          )})"
+          .value="${this._menuAlignment}" 
+          .configValue="${"menu_alignment"}" 
+          @value-changed="${this._valueChanged}" >
+          <paper-listbox slot="dropdown-content">
+            <paper-item>Responsive</paper-item>
+            <paper-item>Left</paper-item>
+            <paper-item>Right</paper-item>
+            <paper-item>Top</paper-item>
+            <paper-item>Bottom</paper-item>
+            <paper-item>Hidden</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
+        <paper-input
+          .label="${"Maximum files per entity to display"}
+          (${this.hass.localize(
+            "ui.panel.lovelace.editor.card.config.optional"
+          )})"
+          .value="${this._maximumFiles}"
+          .configValue="${"maximum_files"}"
+          @value-changed="${this._valueChanged}"
+        ></paper-input>
+      </div>
     </div>
     <div class="side-by-side">
       <div class="instructions">
@@ -635,6 +707,53 @@ class GalleryCardEditor extends LitElement {
     this.configChanged(this._config);
   }
 
+  _addEntity(ev) {
+    if (ev.target.value) {
+      var entities = Object.assign([], this._config.entities);
+      entities.push(ev.target.value);
+
+      this._config = {
+        ...this._config,
+        entities: entities
+      };
+
+      this.configChanged(this._config);
+      ev.target.value = null;
+    }
+  }
+
+  _moveEntity(ev) {
+    var index = ev.target.index;
+    var dir = ev.target.moveDirection;
+
+    if (index + dir >= 0 && index + dir < this._config.entities.length) {
+      var entities = Object.assign([], this._config.entities);
+
+      var e = entities[index];
+      entities[index] = entities[index + dir];
+      entities[index + dir] = e;
+
+      this._config = {
+        ...this._config,
+        entities: entities
+      };
+
+      this.configChanged(this._config);
+    }
+  }
+
+  _deleteEntity(ev) {
+    var index = ev.target.index;
+    var entities = Object.assign([], this._config.entities);
+    entities.splice(index, 1);
+    this._config = {
+      ...this._config,
+      entities: entities
+    };
+
+    this.configChanged(this._config);
+  }
+
   static get styles() {
     return css`
       .side-by-side {
@@ -643,6 +762,9 @@ class GalleryCardEditor extends LitElement {
       .side-by-side > * {
         flex: 1;
         padding-right: 4px;
+      }
+      .entity-list {
+        font-size: larger;
       }
       .instructions {
         font-size: x-small;
