@@ -65,7 +65,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | entities | string | **Required** | A list of entity_id of the files sensor added above or of camera entities.  
 | title | string | **Optional** | The name to show at the top of the card.  
 | menu_alignment | string | **Optional** | Alignment of the menu (the small list of images/videos to view).  Default is if not specified is Responsive (see below)
-| maximum_files | integer | **Optional** | The number of files to show in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 by date will be shown)
+| maximum_files | integer | **Optional** | The number of files to show from each entity in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 for each entity by date will be shown)
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
 
