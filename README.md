@@ -9,9 +9,11 @@ New in v2.0 - support for selecting Camera entities in addition to the Files Com
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
 ## Installation
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+
 To display files from a folder, this card requires [the files component](https://github.com/TarheelGrad1998/files) to be installed/configured.
 
-For more details, see [Thomas Loven's Install Guide](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
+Now available in HACS, but the below are for installing manually.  For more details, see [Thomas Loven's Install Guide](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
 
 1.  Place the `gallary-card.js` file under your `/config/www/` folder of Home Assistant (suggest - create a subdirectory for `cards`)
 2.  Add the card within the resources section (Config -> Lovelace Dashboards -> Resources)
