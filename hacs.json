@@ -1,6 +1,5 @@
 {
   "name": "Gallery Card",
   "content_in_root": true,
-  "filename": "gallery-card.js",
-  "render_readme": true
+  "filename": "gallery-card.js"
 }
