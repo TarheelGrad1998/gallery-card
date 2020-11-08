@@ -8,36 +8,9 @@ New in v2.0 - support for selecting Camera entities in addition to the Files Com
 
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
-## Installation - Files Component
+## Installation
+To display files from a folder, this card requires [the files component](https://github.com/TarheelGrad1998/files) to be installed/configured.
 
-Files that will appear in the gallery must be in the WWW folder, ideally in a subfolder. This component will periodically scan the folder for changes to the files, and is based on the built-in Folder component.
-
-1. Create a folder in your `config` directory named `custom_components`
-2. Create a folder in your `custom_components` named `files`
-3. Copy the 3 files (_init_.py, manifest.json, and sensor.py) into the `files` folder
-4. Create a folder in your `WWW` folder named `images` (or any other name, but be sure to use the proper name below)
-5. Add your images/videos to this folder
-6. Add the files sensor to your configuration.yaml file
-    ```yaml
-    - sensor
-        - platform: files
-          folder: /config/www/images
-          name: gallery_images
-          sort: date
-    ```
-7. Restart Home Assistant
-8. Check the sensor.gallery_images entity to see if the `fileList` attribute lists your files
-
-### Configuration Variables - Files Component
-
-| Name | Type | Default | Description
-| ---- | ---- | ------- | -----------
-| platform | string | **Required** | `files`
-| folder | string | **Required** | Folder to scan, must be /config/www/***
-| name | string | **Required** | The entity ID for the sensor
-| sort | string | **Optional** | One of 'name', 'date', or 'size';  Determines how files are sorted in the Gallery, `Default: date`
-
-## Installation - Gallery Card
 For more details, see [Thomas Loven's Install Guide](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
 
 1.  Place the `gallary-card.js` file under your `/config/www/` folder of Home Assistant (suggest - create a subdirectory for `cards`)
@@ -57,7 +30,7 @@ For more details, see [Thomas Loven's Install Guide](https://github.com/thomaslo
     ```
 I recommend adding the card to a view set to Panel Mode for best results.
 
-### Configuration Variables - Gallery Card
+### Configuration Variables 
 Whether using the editor or yaml, the following configurations can be used:
 
 | Name | Type | Default | Description
