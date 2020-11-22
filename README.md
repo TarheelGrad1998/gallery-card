@@ -9,7 +9,7 @@ New in v2.0 - support for selecting Camera entities in addition to the Files Com
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
 ## Installation
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 
 To display files from a folder, this card requires [the files component](https://github.com/TarheelGrad1998/files) to be installed/configured.
 
