@@ -7,33 +7,37 @@ import {
 class GalleryCard extends LitElement {
   static get properties() {
     return {
-      hass: {},
+      _hass: {},
       config: {},
       resources: {},
       currentResourceIndex: {},
       autoPlayVideo: {},
       xDown: {},
-      yDown: {}
+      yDown: {},
+      errors: {}
     };
   }
 
   render() {
-    this._loadResources();
     const menuAlignment = (this.config.menu_alignment || "responsive").toLowerCase();
 
     return html`
+        ${this.errors == undefined ? html`` :
+         this.errors.map((error) => {
+          return html`<hui-warning>${error}</hui-warning>`
+         })}
         <ha-card .header=${this.config.title} class="menu-${menuAlignment}">
           <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}">
             <figure>
               ${
                 this._currentResource().isHass ?
-                html`<hui-image
-                    .hass=${this.hass}
+                html`<hui-image @click="${ev => this._popupCamera(ev)}"
+                    .hass=${this._hass}
                     .cameraImage=${this._currentResource().name}
                     .cameraView=${"live"}
                   ></hui-image>` :
                 this._isImageExtension(this._currentResource().extension) ?
-                html`<img src="${this._currentResource().url}"/>` :
+                html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
                 html`<video controls src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
               }
               <figcaption>${this._currentResource().caption} 
@@ -45,13 +49,13 @@ class GalleryCard extends LitElement {
             <button class="btn btn-right" @click="${ev => this._selectResource(this.currentResourceIndex+1)}">&gt;</button> 
           </div>
           <div class="resource-menu">
-            ${this.resources.map(resource => {
+            ${this.resources.map((resource, index) => {
                 return html`
-                    <figure id="resource${resource.index}" data-imageIndex="${resource.index}" @click="${ev => this._selectResource(resource.index)}" class="${(resource.index == this.currentResourceIndex) ? 'selected' : ''}">
+                    <figure id="resource${index}" data-imageIndex="${index}" @click="${ev => this._selectResource(index)}" class="${(index == this.currentResourceIndex) ? 'selected' : ''}">
                     ${
                       resource.isHass ?
                       html`<hui-image
-                          .hass=${this.hass}
+                          .hass=${this._hass}
                           .cameraImage=${resource.name}
                           .cameraView=${"live"}
                         ></hui-image>` :
@@ -63,6 +67,10 @@ class GalleryCard extends LitElement {
                     </figure>
                 `;
             })}
+          </div>
+          <div id="imageModal" class="modal">
+            <img class="modal-content" id="popupImage">
+            <div id="popupCaption"></div>
           </div>
         </ha-card>
     `;
@@ -82,7 +90,17 @@ class GalleryCard extends LitElement {
       delete this.config.entity;
     }
 
-    this.currentResourceIndex = 0;
+    if (this._hass !== undefined)
+      this._loadResources(this._hass);
+
+    this._doSlideShow(true);
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    
+    if (this.resources == null)
+      this._loadResources(this._hass);
   }
 
   static getConfigElement() {
@@ -97,15 +115,33 @@ class GalleryCard extends LitElement {
     return(ext.match(/(jpeg|jpg|gif|png|tiff|bmp)$/) != null);
   }
 
-  _selectResource(idx) {
+  _doSlideShow(firstTime) {
+    if (!firstTime)
+      this._selectResource(this.currentResourceIndex+1, true);
+
+    if (this.config.slideshow_timer) {
+      var time = parseInt(this.config.slideshow_timer);
+      if (!isNaN(time) && time > 0) {
+        setTimeout(() => {this._doSlideShow();}, (time * 1000));
+      }
+    }
+  }
+
+  _selectResource(idx, fromSlideshow) {
     this.autoPlayVideo = true;
 
+    var nextResourceIdx = idx;
+
     if (idx < 0)
-      this.currentResourceIndex = this.resources.length - 1;
+      nextResourceIdx = this.resources.length - 1;
     else if (idx >= this.resources.length)
-      this.currentResourceIndex = 0;
-    else
-      this.currentResourceIndex = idx;
+      nextResourceIdx = 0;
+
+    this.currentResourceIndex = nextResourceIdx;
+
+    if (fromSlideshow && this.parentNode.tagName && this.parentNode.tagName.toLowerCase() == "hui-card-preview") {
+      return;
+    }
 
     var elt = this.shadowRoot.querySelector("#resource" + this.currentResourceIndex);
     if (elt)
@@ -121,7 +157,7 @@ class GalleryCard extends LitElement {
         url: "",
         name: "",
         extension: "jpg",
-        caption: "No images or videos to display",
+        caption: index === undefined ? "Loading resources..." : "No images or videos to display",
         index: 0
       };
     }
@@ -138,6 +174,29 @@ class GalleryCard extends LitElement {
 
   _videoMetadataLoaded(evt) {
     evt.target.parentNode.querySelector(".duration").innerHTML = "[" + this._getFormattedVideoDuration(evt.target.duration) + "]";    
+  }
+
+  _popupCamera(evt) {
+    const event = new Event("hass-more-info", {
+      bubbles: true,
+      composed: true
+    });
+    event.detail = {entityId: this._currentResource().name};
+    this.dispatchEvent(event);
+  }
+
+  _popupImage(evt) {
+    var modal = this.shadowRoot.getElementById("imageModal");
+    var modalImg = this.shadowRoot.getElementById("popupImage");
+    var captionText = this.shadowRoot.getElementById("popupCaption");
+
+    modal.style.display = "block";
+    modalImg.src = this._currentResource().url;
+    captionText.innerHTML = this._currentResource().caption;
+
+    modal.onclick = function() {
+      modal.style.display = "none";
+    }
   }
 
   _getFormattedVideoDuration(duration) {
@@ -188,22 +247,180 @@ class GalleryCard extends LitElement {
       this.yDown = null;                                            
   };
 
-  _loadResources() {
+  _loadResources(hass) {
+    var commands = [];
+
+    this.currentResourceIndex = undefined;
     this.resources = [];
 
     const maximumFiles = this.config.maximum_files;
     const fileNameFormat = this.config.file_name_format;
     const captionFormat = this.config.caption_format;
+    const reverseSort = this.config.reverse_sort ?? true;
 
-    this.config.entities.forEach(entityId => {
-      var entityState = this.hass.states[entityId];
+    this.config.entities.forEach(entity => {
+      var entityId;
+      var recursive = false;
+      if (typeof entity === 'object') {
+        entityId = entity.path;
+        if (entity.recursive)
+          recursive = entity.recursive;
+      }
+      else {
+        entityId = entity;
+      }
 
-      if (entityState.attributes.entity_picture != undefined)
-        this._loadCameraResource(entityId, entityState);
+      if (entityId.substring(0, 15).toLowerCase() == "media-source://") {
+        commands.push(this._loadMediaResource(hass, entityId, maximumFiles, fileNameFormat, captionFormat, recursive, reverseSort));
+      }
+      else {
+        var entityState = hass.states[entityId];
 
-      if (entityState.attributes.fileList != undefined)
-        this._loadFilesResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, captionFormat);
+        if (entityState == undefined) {
+          commands.push(Promise.resolve({
+            error: true,
+            entity: entityId,
+            message: "Invalid Entity ID"
+          }));
+        }
+        else {
+          if (entityState.attributes.entity_picture != undefined)
+            commands.push(this._loadCameraResource(entityId, entityState));
+
+          if (entityState.attributes.fileList != undefined)
+            commands.push(this._loadFilesResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, captionFormat, reverseSort));
+        }
+      }
     });
+
+    Promise.all(commands).then(resources => {
+      this.resources = resources.filter(result => !result.error).flat(Infinity);
+      this.currentResourceIndex = 0; 
+
+      this.errors = [];
+      resources.filter(result => result.error).flat(Infinity).forEach(error => {
+        this.errors.push(error.message + ' ' + error.entity)
+        this._hass.callService('system_log', 'write', {
+          message: 'Gallery Card Error:  ' + error.message + '   ' + error.entity
+        });
+      });
+    });
+  }
+
+  _loadMediaResource(hass, contentId, maximumFiles, fileNameFormat, captionFormat, recursive, reverseSort) {
+    return this._loadMedia(this, hass, contentId, maximumFiles, recursive, reverseSort)
+      .then(values => {
+        var resources = [];
+
+        values.forEach(mediaItem => {
+            var resource = this._createFileResource(mediaItem.authenticated_path, fileNameFormat, captionFormat);
+
+            if (resource !== undefined) {
+              resources.push(resource);
+            }
+          }
+        );
+
+        return resources;
+      })
+      .catch(function(e) {
+        return {
+          error: true,
+          entity: contentId,
+          message: e.message
+        };
+      });
+  }
+
+  _loadMedia(ref, hass, contentId, maximumFiles, recursive, reverseSort) {
+    var mediaItem = {
+      media_class: "directory",
+      media_content_id: contentId
+    };
+
+    if (contentId.substring(contentId.length - 1, contentId.length) != "/" && contentId != "media-source://media_source") {
+      mediaItem.media_content_id += "/";
+    }
+
+    return Promise.all(this._fetchMedia(ref, hass, mediaItem, recursive))
+      .then(function(values) { 
+        var mediaItems = values
+          .flat(Infinity)
+          .filter(function(item) {return item !== undefined})
+          .sort(
+            function (a, b) {
+              if (a.title > b.title) {
+                return 1;
+              }
+              if (a.title < b.title) {
+                return -1;
+              }
+            return 0;
+          });
+
+        if (reverseSort)
+          mediaItems.reverse();
+          
+        if (maximumFiles != undefined && !isNaN(maximumFiles) && maximumFiles < mediaItems.length) {
+          mediaItems.length = maximumFiles;
+        }        
+
+        return Promise.all(mediaItems.map(function(mediaItem) {
+          return ref._fetchMediaItem(hass, mediaItem.media_content_id)
+            .then(function(auth) {
+              return {
+                ...mediaItem,
+                authenticated_path: auth.url 
+              };
+            });
+        }));
+      });
+  }
+
+  _fetchMedia(ref, hass, mediaItem, recursive) {
+    var commands = [];
+
+    if (mediaItem.media_class == "directory") {
+      if (mediaItem.children) {
+        commands.push(
+          ...mediaItem.children
+          .filter(mediaItem => { 
+            return (mediaItem.media_class == "video" || mediaItem.media_class == "image" || (recursive && mediaItem.media_class == "directory")) && mediaItem.title != "@eaDir/";
+          })
+          .map(mediaItem => {
+            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive));
+          }));
+      }
+      else {
+        commands.push(
+          ref._fetchMediaContents(hass, mediaItem.media_content_id)
+          .then(mediaItem => {
+            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive));
+          })
+        );
+      }
+    }
+
+    if (mediaItem.media_class != "directory") {
+      commands.push(Promise.resolve(mediaItem));
+    }
+
+    return commands;
+  }
+
+  _fetchMediaContents(hass, contentId) {
+    return hass.callWS({
+      type: "media_source/browse_media",
+      media_content_id: contentId
+    })
+  }
+
+  _fetchMediaItem(hass, mediaItemPath) {
+    return hass.callWS({
+      type: "media_source/resolve_media",
+      media_content_id: mediaItemPath,
+      expires: (60 * 60 * 3)  //3 hours
+    })
   }
 
   _loadCameraResource(entityId, camera) {
@@ -212,76 +429,92 @@ class GalleryCard extends LitElement {
       name: entityId,
       extension: "jpg",
       caption: camera.attributes.friendly_name ?? entityId,
-      index: this.resources.length,
       isHass: true
     }
   
-    this.resources.push(resource);
+    return Promise.resolve(resource);
   }
 
-  _loadFilesResources(files, maximumFiles, fileNameFormat, captionFormat) {
-    if (!files)
-      return;
+  _loadFilesResources(files, maximumFiles, fileNameFormat, captionFormat, reverseSort) {
+    var resources = [];
+    if (files) {
+      files = files.filter(file => file.indexOf("@eaDir") < 0);
 
-    var lastIndex = 0;
-    if(maximumFiles != undefined && !isNaN(maximumFiles) && maximumFiles < files.length) {
-        lastIndex = files.length - maximumFiles;
-    }
+      if (reverseSort)
+        files.reverse();
 
-    var i;
-    for(i = files.length - 1; i >= lastIndex; i--) {
-      var filePath = files[i];
-      // /config/downloads/front_door/
-      // /config/www/...
-      var fileUrl = filePath.replace("/config/www/", "/local/");
-      if (filePath.indexOf("/config/www/") < 0)
-        fileUrl = "/local/" + filePath.substring(filePath.indexOf("/www/")+5);
-      
-      var arfilePath = filePath.split("/");
-      var fileName = arfilePath[arfilePath.length - 1];
-
-      if (fileName != '@eaDir') {
-        var arFileName = fileName.split(".");
-        var ext = arFileName[arFileName.length - 1].toLowerCase();
-        fileName = fileName.substring(0, fileName.length - ext.length - 1);
-
-        var fileCaption = "";
-        if (fileNameFormat === undefined || captionFormat === undefined)
-            fileCaption = fileName;
-        else {
-          var tokens = ["%YYY", "%m", "%d", "%H", "%M", "%S", "%p"]
-          fileCaption = captionFormat;
-
-          var hr = 0;
-          for (let token of tokens) {
-            var searchIndex = fileNameFormat.indexOf(token);
-
-            if (searchIndex >= 0) {
-              var val = fileName.substring(searchIndex, searchIndex + token.length);
-              if (token == "%H" && captionFormat.indexOf("%p") >= 0) {
-                hr = parseInt(val);
-                if (val == "00") val = 12;
-                if (parseInt(val) > 12) val = parseInt(val) - 12;
-              }
-              if (token == "%m" || token == "%d" | token == "%H") val = parseInt(val);
-              fileCaption = fileCaption.replace(token, val);
-            }
-          }
-
-          fileCaption = fileCaption.replace("%p", (hr > 11 ? "PM" : "AM"));
-        }
-
-        var resource = {
-          url: fileUrl,
-          name: fileName,
-          extension: ext,
-          caption: fileCaption,
-          index: this.resources.length
-        }
-      
-        this.resources.push(resource);
+      if (maximumFiles != undefined && !isNaN(maximumFiles) && maximumFiles < files.length) {
+        files.length = maximumFiles;
       }
+
+      files.forEach(file => {
+        var filePath = file;
+        // /config/downloads/front_door/
+        // /config/www/...
+        var fileUrl = filePath.replace("/config/www/", "/local/");
+        if (filePath.indexOf("/config/www/") < 0)
+          fileUrl = "/local/" + filePath.substring(filePath.indexOf("/www/")+5);
+
+        var resource = this._createFileResource(fileUrl, fileNameFormat, captionFormat);
+        
+        if (resource !== undefined) {
+          resources.push(resource);
+        }
+      });
     }
+
+    return Promise.resolve(resources);
+  }
+
+  _createFileResource(fileRawUrl, fileNameFormat, captionFormat) {
+    var resource;
+
+    var fileUrl = fileRawUrl.split("?")[0];
+    var arfilePath = fileUrl.split("/");
+    var fileName = arfilePath[arfilePath.length - 1];
+
+    if (fileName != '@eaDir') {
+      var arFileName = fileName.split(".");
+      var ext = arFileName[arFileName.length - 1].toLowerCase();
+      fileName = fileName.substring(0, fileName.length - ext.length - 1);
+
+      var fileCaption = "";
+      if (fileNameFormat === undefined || captionFormat === undefined)
+          fileCaption = fileName;
+      else {
+        var tokens = ["%YYY", "%m", "%d", "%H", "%M", "%S", "%p"]
+        fileCaption = captionFormat;
+
+        var hr = 0;
+        for (let token of tokens) {
+          var searchIndex = fileNameFormat.indexOf(token);
+
+          if (searchIndex >= 0) {
+            var val = fileName.substring(searchIndex, searchIndex + token.length);
+            if (token == "%H" && captionFormat.indexOf("%p") >= 0) {
+              hr = parseInt(val);
+              if (val == "00") val = 12;
+              if (parseInt(val) > 12) val = parseInt(val) - 12;
+            }
+            if (token == "%m" || token == "%d" | token == "%H") val = parseInt(val);
+            fileCaption = fileCaption.replace(token, val);
+          }
+        }
+
+        fileCaption = fileCaption.replace("%p", (hr > 11 ? "PM" : "AM"));
+      }
+
+      resource = {
+        url: fileRawUrl,
+        base_url: fileUrl,
+        name: fileName,
+        extension: ext,
+        caption: fileCaption,
+        index: -1
+      };
+    }
+
+    return resource;
   }
 
   static get styles() {
@@ -466,6 +699,59 @@ class GalleryCard extends LitElement {
         overflow-x: scroll;
         display: none;
       }
+
+      /* The Modal (background) */
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        padding-top: 100px; /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+      }
+
+      /* Modal Content (Image) */
+      .modal-content {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 700px;
+      }
+
+      /* Caption of Modal Image (Image Text) - Same Width as the Image */
+      #popupCaption {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 700px;
+        text-align: center;
+        color: #ccc;
+        padding: 10px 0;
+        height: 150px;
+      }
+
+      /* Add Animation - Zoom in the Modal */
+      .modal-content, #popupCaption {
+        animation-name: zoom;
+        animation-duration: 0.6s;
+      }
+
+      @keyframes zoom {
+        from {transform:scale(0)}
+        to {transform:scale(1)}
+      }
+
+      /* 100% Image Width on Smaller Screens */
+      @media only screen and (max-width: 700px){
+        .modal-content {
+          width: 100%;
+        }
+      }
     `;
   }
 }
@@ -475,11 +761,20 @@ class GalleryCardEditor extends LitElement {
   static get properties() {
     return {
       _fileNameExample: {},
-      _captionExample: {}
+      _captionExample: {},
+      _config: {},
+      _mediaSourceEnabled: {},
+      _addMediaOpened: {},
+      _selectedMediaPath: {},
+      _selectedMediaChildren: {}
     };
   }
 
   setConfig(config) {
+    this._mediaSourceEnabled = (this.hass.config.components.indexOf("media_source") >= 0);
+    if (this._mediaSourceEnabled)
+      this._initMediaSelections();
+
     this._config = config;
     if (this._config.entity) {
       if (!this._config.entities) {
@@ -525,12 +820,20 @@ class GalleryCardEditor extends LitElement {
     return this._config.maximum_files || "";
   }
 
+  get _slideshowTimer() {
+    return this._config.slideshow_timer || "";
+  }
+
   get _fileNameFormat() {
     return this._config.file_name_format || "";
   }
 
   get _captionFormat() {
     return this._config.caption_format || "";
+  }
+
+  get _reverseSort() {
+    return this._config.reverse_sort ?? true;
   }
 
   formatDate2Digits(str, zeroPad) {
@@ -569,6 +872,32 @@ class GalleryCardEditor extends LitElement {
   render() {
     return html`
     <div class="card-config">
+    ${this._addMediaOpened ?
+      html`
+        <paper-dialog no-cancel-on-outside-click id="addMediaDialog" opened="${this._addMediaOpened}">
+          <h2>Add a Media Source</h2>
+          <p>
+            <paper-dropdown-menu style="flex-grow:1;">
+              <paper-listbox selected="0" slot="dropdown-content" id="addMediaDD">
+                <paper-item>${this._selectedMediaPath == "" ? "ALL MEDIA" : this._selectedMediaPath}</paper-item>
+                ${this._selectedMediaChildren.map(directory => {
+                  return html`<paper-item>${directory}</paper-item>`;
+                })}
+              </paper-listbox>
+            </paper-dropdown-menu>
+            <ha-icon-button icon="hass:folder-download" @click="${this.browseDirectory}"></ha-icon-button>
+            ${this._selectedMediaPath !== "" ? html`<ha-icon-button icon="hass:folder-upload" @click="${this.upDirectory}"></mwc-button>` : html``}
+            </br>
+            <ha-checkbox></ha-checkbox>Media in All Subdirectories<br/>
+            <div class="buttons">
+            <mwc-button class="dialog-button" @click="${this.addMediaSource}">Add</mwc-button>
+            &nbsp;&nbsp;
+            <mwc-button class="dialog-button" @click="${this.closeAddMedia}">Cancel</mwc-button>
+            </div>
+          </p>
+        </paper-dialog>
+        ` : html``
+    }
     <div class="side-by-side">
       <div>
         <h4>${this.hass.localize(
@@ -578,10 +907,21 @@ class GalleryCardEditor extends LitElement {
         )})</h4>
         <div class="entity-list">
           ${this._entities.map((entity, index) => {
+            var entityId;
+            var recursive = false;
+            if (typeof entity === 'object') {
+              entityId = entity.path;
+              if (entity.recursive)
+                recursive = entity.recursive;
+            }
+            else {
+              entityId = entity;
+            }
+
             return html`
                 <div style="display:flex; align-items: center;">
                   <ha-icon icon="hass:folder-image"></ha-icon>
-                  <span style="flex-grow:1;">${entity}</span>
+                  <span style="flex-grow:1;">${entityId + (recursive ? ' (& subdirs)' : '')}</span>
                   <ha-icon-button icon="hass:arrow-down" .index="${index}" .moveDirection="${1}" @click="${this._moveEntity}"></ha-icon-button>
                   <ha-icon-button icon="hass:arrow-up" .index="${index}" .moveDirection="${-1}" @click="${this._moveEntity}"></ha-icon-button>
                   <ha-icon-button icon="hass:close" .index="${index}" @click="${this._deleteEntity}"></ha-icon-button>
@@ -598,6 +938,9 @@ class GalleryCardEditor extends LitElement {
                 `)}
             </paper-listbox>
           </paper-dropdown-menu>
+          ${this._mediaSourceEnabled ?
+            html`<button @click="${this.showAddMedia}">Add Media Source</button>`
+            : html``}
         </div>
       </div>
       <div>
@@ -627,7 +970,12 @@ class GalleryCardEditor extends LitElement {
             <paper-item>Bottom</paper-item>
             <paper-item>Hidden</paper-item>
           </paper-listbox>
-        </paper-dropdown-menu>
+        </paper-dropdown-menu><br/>
+        <ha-checkbox
+            .checked="${this._reverseSort}"
+            .configValue = "${"reverse_sort"}"
+            @click="${this._valueChanged}"
+          ></ha-checkbox>Reverse sort (newest first)<br/>
         <paper-input
           .label="${"Maximum files per entity to display"}
           (${this.hass.localize(
@@ -635,6 +983,15 @@ class GalleryCardEditor extends LitElement {
           )})"
           .value="${this._maximumFiles}"
           .configValue="${"maximum_files"}"
+          @value-changed="${this._valueChanged}"
+        ></paper-input>
+        <paper-input
+          .label="${"Slideshow Time (seconds)"}
+          (${this.hass.localize(
+            "ui.panel.lovelace.editor.card.config.optional"
+          )})"
+          .value="${this._slideshowTimer}"
+          .configValue="${"slideshow_timer"}"
           @value-changed="${this._valueChanged}"
         ></paper-input>
       </div>
@@ -690,8 +1047,13 @@ class GalleryCardEditor extends LitElement {
     ) {
       return;
     }
-
-    if (target.configValue) {
+    if (target.configValue == "reverse_sort") {
+      this._config = {
+        ...this._config,
+        reverse_sort: !target.checked
+      };
+    }
+    else if (target.configValue) {
       if (target.value === "") {
         this._config = { ...this._config };
         delete this._config[target.configValue];
@@ -719,6 +1081,90 @@ class GalleryCardEditor extends LitElement {
 
       this.configChanged(this._config);
       ev.target.value = null;
+    }
+  }
+
+  addMediaSource(ev) {
+    var val = "media-source://media_source" + this._getSelectedValue(ev.target.parentNode.parentNode);
+    var checked = ev.target.parentNode.parentNode.querySelector("ha-checkbox").checked;
+
+    var entities = Object.assign([], this._config.entities);
+    entities.push({path: val, recursive: checked});
+
+    this._config = {
+      ...this._config,
+      entities: entities
+    };
+
+    this.closeAddMedia();
+    this.configChanged(this._config);  
+  }
+
+  showAddMedia() {
+    this._addMediaOpened = true;
+  }
+  closeAddMedia() {
+    this._addMediaOpened = false;
+  }
+
+  _fetchMediaContents() {    
+    this.hass.callWS({
+      type: "media_source/browse_media",
+      media_content_id: "media-source://media_source" + this._selectedMediaPath
+    }).then(mediaSource => {
+      this._selectedMediaChildren = mediaSource.children
+                                      .filter(function(item) {return item.media_class == "directory"})
+                                      .map(mediaItem => {return mediaItem.media_content_id.replace("media-source://media_source", "");});
+      if (this._addMediaOpened) {
+        this.shadowRoot.querySelector(".card-config").querySelector("#addMediaDD").selected = undefined;
+        this.shadowRoot.querySelector(".card-config").querySelector("#addMediaDD").selected = 0;
+        
+        this.shadowRoot.querySelector(".card-config").querySelector("paper-dropdown-menu").open();
+      }
+    });
+  }
+
+  _initMediaSelections() {
+    this._addMediaOpened = false;
+
+    this._selectedMediaPath = "";
+    this._fetchMediaContents();  
+  }
+
+  browseDirectory(ev) {
+    var ddVal = this._getSelectedValue(ev.target.parentNode);
+
+    if (ddVal != this._selectedMediaPath) {
+      this._selectedMediaPath = ddVal;
+      this._fetchMediaContents();
+    }
+  }
+
+  upDirectory(ev) {
+    if (this._selectedMediaPath != "") {
+      var newVal = this._selectedMediaPath;
+      if (newVal.substring(newVal.length - 2, newVal.length) == "/.") 
+        newVal = newVal.substring(0, newVal.length - 2);
+      if (newVal.substring(newVal.length - 1, newVal.length) == "/")
+        newVal = newVal.substring(0, newVal.length - 1);
+      newVal = newVal.substring(0, newVal.lastIndexOf("/") + 1);
+      if (newVal == "/" || newVal == "/local/")
+        newVal = "";
+
+      this._selectedMediaPath = newVal;
+      this._fetchMediaContents();
+    }
+  }
+
+  _getSelectedValue(target) {
+    //var dd = target.parentNode.firstChild.nextElementSibling;
+    var dd = target.querySelector("paper-dropdown-menu");
+
+    if (dd.value == "ALL MEDIA") {
+      return "";
+    }
+    else {
+      return dd.value;
     }
   }
 
@@ -779,6 +1225,12 @@ class GalleryCardEditor extends LitElement {
       .example {
         font-size: small;
         font-style: italic;
+      }
+      .dialog-button {
+        width:75px;
+      }
+      paper-dropdown-menu, ha-checkbox {
+        vertical-align: middle;
       }
     `;
   }
