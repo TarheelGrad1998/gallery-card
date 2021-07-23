@@ -21,7 +21,7 @@ At present, the decision of which to use is up to you, but there are consequence
 
 Now available in HACS, but follow the below to install manually.  For more details, see [Thomas Loven's Install Guide](https://github.com/thomasloven/hass-config/wiki/Lovelace-Plugins)
 
-1.  Place the `gallary-card.js` file under your `/config/www/` folder of Home Assistant (suggest - create a subdirectory for `cards`)
+1.  Place the `gallery-card.js` file under your `/config/www/` folder of Home Assistant (suggest - create a subdirectory for `cards`)
 2.  Add the card within the resources section (Config -> Lovelace Dashboards -> Resources)
     URL: /local/cards/gallery-card.js
     Type: Javascript Module
