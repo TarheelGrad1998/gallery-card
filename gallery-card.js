@@ -27,7 +27,9 @@ class GalleryCard extends LitElement {
           return html`<hui-warning>${error}</hui-warning>`
          })}
         <ha-card .header=${this.config.title} class="menu-${menuAlignment}">
-          <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}">
+          ${this.currentResourceIndex == undefined || !(this.config.show_reload ?? false) ?
+            html`` : html`<ha-progress-button class="btn-reload" @click="${ev => this._loadResources(this._hass)}">Reload</ha-progress-button>` }
+          <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}" @keydown="${ev => this._keyNavigation(ev)}">
             <figure>
               ${
                 this._currentResource().isHass ?
@@ -61,7 +63,7 @@ class GalleryCard extends LitElement {
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
                       html`<img src="${resource.url}"/>` :
-                      html`<video src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" ></video>`
+                      html`<video preload="none" src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
@@ -74,6 +76,22 @@ class GalleryCard extends LitElement {
           </div>
         </ha-card>
     `;
+  }
+
+  updated(changedProperties) {
+    // changedProperties.forEach((oldValue, propName) => {
+    //   console.log(`${propName} changed. oldValue: ${oldValue}`);
+    // });
+    this._downloadNextMenuVideo();
+  }
+
+  _downloadNextMenuVideo() {
+    let v = this.shadowRoot.querySelector(".resource-menu figure video[preload='none']");
+    if (v != null)
+    {
+      v.removeAttribute("preload");
+      v.load();
+    }
   }
 
   setConfig(config) {
@@ -211,6 +229,21 @@ class GalleryCard extends LitElement {
     return minutes + ":" + seconds;    
   }  
   
+  _keyNavigation(evt) {
+    switch(evt.code) {
+      case "ArrowDown":
+      case "ArrowRight":
+        this._selectResource(this.currentResourceIndex+1);
+        break;
+      case "ArrowUp":
+      case "ArrowLeft":
+        this._selectResource(this.currentResourceIndex-1);
+        break;
+      default:
+        // null
+    }
+  }
+
   _handleTouchStart(evt) {                                         
       this.xDown = evt.touches[0].clientX;                                      
       this.yDown = evt.touches[0].clientY;                                      
@@ -477,6 +510,7 @@ class GalleryCard extends LitElement {
       var arFileName = fileName.split(".");
       var ext = arFileName[arFileName.length - 1].toLowerCase();
       fileName = fileName.substring(0, fileName.length - ext.length - 1);
+      fileName = decodeURIComponent(fileName);
 
       var fileCaption = "";
       if (fileNameFormat === undefined || captionFormat === undefined)
@@ -528,6 +562,11 @@ class GalleryCard extends LitElement {
       ha-card {
         height: 100%;
         overflow: hidden;
+      }
+      .btn-reload {
+        float: right;
+        margin-right: 25px;
+        text-align: right;
       }
       figcaption {
         text-align:center;
@@ -657,6 +696,11 @@ class GalleryCard extends LitElement {
         height: calc(100vh - 120px);
         overflow-y: scroll; 
         float: left;
+      }
+
+      .menu-left .btn-reload {
+        float: left;
+        margin-left: 25px;
       }
 
       .menu-top {
@@ -836,6 +880,10 @@ class GalleryCardEditor extends LitElement {
     return this._config.reverse_sort ?? true;
   }
 
+  get _showReload() {
+    return this._config.show_reload ?? false;
+  }
+
   formatDate2Digits(str, zeroPad) {
     if (zeroPad) {
       var myString = "0" + str;
@@ -972,6 +1020,11 @@ class GalleryCardEditor extends LitElement {
           </paper-listbox>
         </paper-dropdown-menu><br/>
         <ha-checkbox
+            .checked="${this._showReload}"
+            .configValue = "${"show_reload"}"
+            @click="${this._valueChanged}"
+          ></ha-checkbox>Show Reload Button<br/>
+        <ha-checkbox
             .checked="${this._reverseSort}"
             .configValue = "${"reverse_sort"}"
             @click="${this._valueChanged}"
@@ -1051,6 +1104,12 @@ class GalleryCardEditor extends LitElement {
       this._config = {
         ...this._config,
         reverse_sort: !target.checked
+      };
+    }
+    else if (target.configValue == "show_reload") {
+      this._config = {
+        ...this._config,
+        show_reload: !target.checked
       };
     }
     else if (target.configValue) {
