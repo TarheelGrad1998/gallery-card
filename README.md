@@ -52,7 +52,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
 | slideshow_timer | integer | **Optional** | If present and greater than 0, will automatically advance the gallery after the provided number of seconds have passed.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
-| show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.
+| show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.  The default is false.
 
 ### Media Source
 To add a media source, specify the path to the media source folder as an entity.  
