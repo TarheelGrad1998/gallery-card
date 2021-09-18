@@ -62,7 +62,7 @@ class GalleryCard extends LitElement {
                           .cameraView=${"live"}
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
-                      html`<img src="${resource.url}"/>` :
+                      html`<img class="lzy_img" src="/local/snapshot.jpg" data-src="${resource.url}"/>` :
                       html`<video preload="none" src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
@@ -79,6 +79,10 @@ class GalleryCard extends LitElement {
   }
 
   updated(changedProperties) {
+    const arr = this.shadowRoot.querySelectorAll('img.lzy_img')
+    arr.forEach((v) => {
+        this.imageObserver.observe(v);
+    })
     // changedProperties.forEach((oldValue, propName) => {
     //   console.log(`${propName} changed. oldValue: ${oldValue}`);
     // });
@@ -95,6 +99,15 @@ class GalleryCard extends LitElement {
   }
 
   setConfig(config) {
+    this.imageObserver = new IntersectionObserver((entries, imgObserver) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                const lazyImage = entry.target
+                console.log("lazy loading ", lazyImage)
+                lazyImage.src = lazyImage.dataset.src
+            }
+        })
+    });
     if (!config.entity && !config.entities) {
       throw new Error("Required configuration for entities is missing");
     }
