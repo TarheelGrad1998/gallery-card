@@ -107,7 +107,7 @@ class GalleryCard extends LitElement {
         entries.forEach((entry) => {
             if (entry.isIntersecting) {
                 const lazyImage = entry.target
-                console.log("lazy loading ", lazyImage)
+                //console.log("lazy loading ", lazyImage)
                 lazyImage.src = lazyImage.dataset.src
             }
         })
