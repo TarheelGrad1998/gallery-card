@@ -62,8 +62,8 @@ class GalleryCard extends LitElement {
                           .cameraView=${"live"}
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
-                      html`<img class="lzy_img" src="/local/snapshot.jpg" data-src="${resource.url}"/>` :
-                      html`<video preload="none" src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
+                      html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
+					  html`<video class="lzy_video" preload="auto" data-src="${resource.url}#t=0.1" ></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
@@ -81,6 +81,10 @@ class GalleryCard extends LitElement {
   updated(changedProperties) {
     const arr = this.shadowRoot.querySelectorAll('img.lzy_img')
     arr.forEach((v) => {
+        this.imageObserver.observe(v);
+    })
+    const varr = this.shadowRoot.querySelectorAll('video.lzy_video')
+    varr.forEach((v) => {
         this.imageObserver.observe(v);
     })
     // changedProperties.forEach((oldValue, propName) => {
