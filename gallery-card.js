@@ -30,7 +30,7 @@ class GalleryCard extends LitElement {
           ${this.currentResourceIndex == undefined || !(this.config.show_reload ?? false) ?
             html`` : html`<ha-progress-button class="btn-reload" @click="${ev => this._loadResources(this._hass)}">Reload</ha-progress-button>` }
           <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}" @keydown="${ev => this._keyNavigation(ev)}">
-            <figure style="margin:0;">
+            <figure style="margin:5px;">
               ${
                 this._currentResource().isHass ?
                 html`<hui-image @click="${ev => this._popupCamera(ev)}"
@@ -53,7 +53,7 @@ class GalleryCard extends LitElement {
           <div class="resource-menu">
             ${this.resources.map((resource, index) => {
                 return html`
-                    <figure style="margin:0;" id="resource${index}" data-imageIndex="${index}" @click="${ev => this._selectResource(index)}" class="${(index == this.currentResourceIndex) ? 'selected' : ''}">
+                    <figure style="margin:5px;" id="resource${index}" data-imageIndex="${index}" @click="${ev => this._selectResource(index)}" class="${(index == this.currentResourceIndex) ? 'selected' : ''}">
                     ${
                       resource.isHass ?
                       html`<hui-image
@@ -62,8 +62,8 @@ class GalleryCard extends LitElement {
                           .cameraView=${"live"}
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
-                      html`<img style="margin:0;" class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
-					  html`<video style="margin:0;" class="lzy_video" preload="auto" data-src="${resource.url}#t=0.1" ></video>`
+                      html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
+					  html`<video class="lzy_video" preload="auto" data-src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}"></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
@@ -612,11 +612,11 @@ class GalleryCard extends LitElement {
       }
       .resource-viewer .btn-left {
         left: 0%;
-        margin-left: 20px;
+        margin-left: 25px;
       }
       .resource-viewer .btn-right {
         right: 0%;
-        margin-right: -15px
+        margin-right: -10px
       }
       figure.selected {
         opacity: 0.5;
