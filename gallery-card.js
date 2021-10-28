@@ -30,7 +30,7 @@ class GalleryCard extends LitElement {
           ${this.currentResourceIndex == undefined || !(this.config.show_reload ?? false) ?
             html`` : html`<ha-progress-button class="btn-reload" @click="${ev => this._loadResources(this._hass)}">Reload</ha-progress-button>` }
           <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}" @keydown="${ev => this._keyNavigation(ev)}">
-            <figure>
+            <figure style="margin:5px;">
               ${
                 this._currentResource().isHass ?
                 html`<hui-image @click="${ev => this._popupCamera(ev)}"
@@ -53,7 +53,7 @@ class GalleryCard extends LitElement {
           <div class="resource-menu">
             ${this.resources.map((resource, index) => {
                 return html`
-                    <figure id="resource${index}" data-imageIndex="${index}" @click="${ev => this._selectResource(index)}" class="${(index == this.currentResourceIndex) ? 'selected' : ''}">
+                    <figure style="margin:5px;" id="resource${index}" data-imageIndex="${index}" @click="${ev => this._selectResource(index)}" class="${(index == this.currentResourceIndex) ? 'selected' : ''}">
                     ${
                       resource.isHass ?
                       html`<hui-image
@@ -62,8 +62,8 @@ class GalleryCard extends LitElement {
                           .cameraView=${"live"}
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
-                      html`<img src="${resource.url}"/>` :
-                      html`<video preload="none" src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
+                      html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
+					  html`<video class="lzy_video" preload="auto" data-src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}"></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
@@ -79,6 +79,14 @@ class GalleryCard extends LitElement {
   }
 
   updated(changedProperties) {
+    const arr = this.shadowRoot.querySelectorAll('img.lzy_img')
+    arr.forEach((v) => {
+        this.imageObserver.observe(v);
+    })
+    const varr = this.shadowRoot.querySelectorAll('video.lzy_video')
+    varr.forEach((v) => {
+        this.imageObserver.observe(v);
+    })
     // changedProperties.forEach((oldValue, propName) => {
     //   console.log(`${propName} changed. oldValue: ${oldValue}`);
     // });
@@ -95,6 +103,15 @@ class GalleryCard extends LitElement {
   }
 
   setConfig(config) {
+    this.imageObserver = new IntersectionObserver((entries, imgObserver) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                const lazyImage = entry.target
+                //console.log("lazy loading ", lazyImage)
+                lazyImage.src = lazyImage.dataset.src
+            }
+        })
+    });
     if (!config.entity && !config.entities) {
       throw new Error("Required configuration for entities is missing");
     }
@@ -595,11 +612,11 @@ class GalleryCard extends LitElement {
       }
       .resource-viewer .btn-left {
         left: 0%;
-        margin-left: 65px;
+        margin-left: 25px;
       }
       .resource-viewer .btn-right {
         right: 0%;
-        margin-right: 30px
+        margin-right: -10px
       }
       figure.selected {
         opacity: 0.5;
