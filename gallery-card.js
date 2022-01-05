@@ -306,6 +306,7 @@ class GalleryCard extends LitElement {
     const maximumFiles = this.config.maximum_files;
     const fileNameFormat = this.config.file_name_format;
     const captionFormat = this.config.caption_format;
+    const parsedDateSort = this.config.parsed_date_sort ?? false;
     const reverseSort = this.config.reverse_sort ?? true;
 
     this.config.entities.forEach(entity => {
@@ -345,6 +346,16 @@ class GalleryCard extends LitElement {
 
     Promise.all(commands).then(resources => {
       this.resources = resources.filter(result => !result.error).flat(Infinity);
+
+      if (parsedDateSort) {        
+        if (reverseSort) {
+          this.resources.sort(function (x, y) { return y.date - x.date; });
+        }
+        else {
+          this.resources.sort(function (x, y) { return x.date - y.date; });
+        }
+      }
+
       this.currentResourceIndex = 0; 
 
       this.errors = [];
@@ -370,7 +381,7 @@ class GalleryCard extends LitElement {
             }
           }
         );
-        resources.sort(function (x, y) { return y.date - x.date; });
+
         return resources;
       })
       .catch(function(e) {
@@ -661,7 +672,6 @@ class GalleryCard extends LitElement {
           padding: 12px;
         }
       }
-
       @media all and (min-width: 600px) {
         .menu-responsive .resource-viewer {
           float: left;
@@ -679,7 +689,6 @@ class GalleryCard extends LitElement {
           float: right;
         }
       }
-
       .menu-bottom .resource-viewer {
         width: 100%;
       }
@@ -701,7 +710,6 @@ class GalleryCard extends LitElement {
       .menu-bottom .resource-viewer figure video {
         max-height: 70vh;
       }
-
       .menu-right .resource-viewer {
         float: left;
         width: 75%;
@@ -717,7 +725,6 @@ class GalleryCard extends LitElement {
         overflow-y: scroll; 
         float: right;
       }
-
       .menu-left .resource-viewer {
         float: right;
         width: 75%;
@@ -733,12 +740,10 @@ class GalleryCard extends LitElement {
         overflow-y: scroll; 
         float: left;
       }
-
       .menu-left .btn-reload {
         float: left;
         margin-left: 25px;
       }
-
       .menu-top {
         display: flex;
         flex-direction: column;
@@ -766,7 +771,6 @@ class GalleryCard extends LitElement {
       .menu-top .resource-viewer figure video {
         max-height: 70vh;
       }
-
       .menu-hidden .resource-viewer {
         width: 100%;
       }
@@ -779,7 +783,6 @@ class GalleryCard extends LitElement {
         overflow-x: scroll;
         display: none;
       }
-
       /* The Modal (background) */
       .modal {
         display: none; /* Hidden by default */
@@ -794,7 +797,6 @@ class GalleryCard extends LitElement {
         background-color: rgb(0,0,0); /* Fallback color */
         background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
       }
-
       /* Modal Content (Image) */
       .modal-content {
         margin: auto;
@@ -802,7 +804,6 @@ class GalleryCard extends LitElement {
         width: 80%;
         max-width: 700px;
       }
-
       /* Caption of Modal Image (Image Text) - Same Width as the Image */
       #popupCaption {
         margin: auto;
@@ -814,18 +815,15 @@ class GalleryCard extends LitElement {
         padding: 10px 0;
         height: 150px;
       }
-
       /* Add Animation - Zoom in the Modal */
       .modal-content, #popupCaption {
         animation-name: zoom;
         animation-duration: 0.6s;
       }
-
       @keyframes zoom {
         from {transform:scale(0)}
         to {transform:scale(1)}
       }
-
       /* 100% Image Width on Smaller Screens */
       @media only screen and (max-width: 700px){
         .modal-content {
@@ -912,9 +910,13 @@ class GalleryCardEditor extends LitElement {
     return this._config.caption_format || "";
   }
 
+  get _parsedDateSort() {
+    return this._config.parsed_date_sort ?? false;
+  }
+
   get _reverseSort() {
     return this._config.reverse_sort ?? true;
-  }
+  }  
 
   get _showReload() {
     return this._config.show_reload ?? false;
@@ -1001,7 +1003,6 @@ class GalleryCardEditor extends LitElement {
             else {
               entityId = entity;
             }
-
             return html`
                 <div style="display:flex; align-items: center;">
                   <ha-icon icon="hass:folder-image"></ha-icon>
@@ -1060,6 +1061,11 @@ class GalleryCardEditor extends LitElement {
             .configValue = "${"show_reload"}"
             @click="${this._valueChanged}"
           ></ha-checkbox>Show Reload Button<br/>
+        <ha-checkbox
+            .checked="${this._parsedDateSort}"
+            .configValue = "${"parsed_date_sort"}"
+            @click="${this._valueChanged}"
+          ></ha-checkbox>Sort using Dates from Captions (below)<br/>
         <ha-checkbox
             .checked="${this._reverseSort}"
             .configValue = "${"reverse_sort"}"
@@ -1136,7 +1142,13 @@ class GalleryCardEditor extends LitElement {
     ) {
       return;
     }
-    if (target.configValue == "reverse_sort") {
+    if (target.configValue == "parsed_date_sort") {
+      this._config = {
+        ...this._config,
+        parsed_date_sort: !target.checked
+      };
+    }
+    else if (target.configValue == "reverse_sort") {
       this._config = {
         ...this._config,
         reverse_sort: !target.checked
