@@ -4,17 +4,18 @@ Custom card for Home Assistant's UI LoveLace which will display images and video
 
 This was developed for use alongside the [component for Kuna cameras](https://github.com/marthoc/kuna) but should work with any images/videos, in theory.
 
-New in v3.0 - support for media source, error logging, slideshow, sorting, and image/camera maximizing.  
+New in v3.3 - support for folder sensor, sorting options, and misc fixes.  
 
 ![Screenshot](https://github.com/TarheelGrad1998/GalleryCard/raw/master/screenshot.png)
 
 ## Images/Video sources
-To display files from a folder, there are now two options when using v3.0+:
+To display files from a folder, there are now three options when using v3.3+:
 1. [The files component](https://github.com/TarheelGrad1998/files), a separate integration you must install and configure.
 2. Using a [media source](https://www.home-assistant.io/integrations/media_source/).  Set up the media source per hass and ensure it appears in the media browser.
+3. (new in v3.3) [The folder component](https://www.home-assistant.io/integrations/folder/), similar to the files component but included in Home Assistant by default.
 
 #### Pros/Cons
-At present, the decision of which to use is up to you, but there are consequences.  The files component loads the files from the server on the backend into a sensor.  This means when Lovelace loads it is much faster to access files.  However, you MUST store your files in the www directory, which means they are essentially publicly available to anyone who can access your HA URL.  The media source component only retrieves files when you load the page, which means it appears slower to load.  However, those files are protected by Home Assistant's authorization and not publicly available.  Additionally, media source files are currently only sorted by file name, where files has more options for date and file size.  
+At present, the decision of which to use is up to you, but there are consequences.  The files and folder components load the files from the server on the backend into a sensor.  This means when Lovelace loads it is much faster to access files.  However, you MUST store your files in the www directory, which means they are essentially publicly available to anyone who can access your HA URL.  The media source component only retrieves files when you load the page, which means it appears slower to load.  However, those files are protected by Home Assistant's authorization and not publicly available.  Additionally, media source files are currently only sorted by file name, where files has more options for date and file size.  
 
 ## Installation
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
@@ -44,13 +45,16 @@ Whether using the editor or yaml, the following configurations can be used:
 
 | Name | Type | Default | Description
 | ---- | ---- | ------- | -----------
-| entities | string | **Required** | A list of entity_id of a files sensor or camera entity, or the media source path (see below).  
+| entities | string | **Required** | A list of entity_id of a files sensor, folder sensor, or camera entity, or the media source path (see below).  
 | title | string | **Optional** | The name to show at the top of the card.  
 | menu_alignment | string | **Optional** | Alignment of the menu (the small list of images/videos to view).  Default is if not specified is Responsive (see below)
-| maximum_files | integer | **Optional** | The number of files to show from each entity in the gallery list.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 for each entity by date will be shown)
+| maximum_files | integer | **Optional** | The number of files to show.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 for each entity by date will be shown)
+| maximum_files_per_entity | boolean | **Optional** | Whether the number of files counted are per Entity.  If true, then the maximum files displayed will be up to maximum_files per entity ; if false then only maximum_files total will be displayed (camera entities are always included and count as 1 file).  The default is true.
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format.
+| caption_leading_zeros | boolean | **Optional** | Whether to include leading zeros in the caption month, day, and hours.  The default is false.
 | slideshow_timer | integer | **Optional** | If present and greater than 0, will automatically advance the gallery after the provided number of seconds have passed.
+| parsed_date_sort | boolean | **Optional** | Whether to use the date parsed using file_name_format in order to sort the items.  Use this to ensure sorting by date if the source is not properly sorted.  The default is false.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
 | show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.  The default is false.
 
@@ -81,7 +85,7 @@ Available options for Menu Alignment are below:
 | Hidden | Hides the list and only shows the larger image
 
 ### Caption Configuration
-The captions under the image/video is formatted using file_name_format and caption_format.  If either is ommitted, the raw filename is used.
+The captions under the image/video is formatted using file_name_format, caption_format, and caption_leading_zeros.  If either file_name_format or caption_format is ommitted, the raw filename is used.
 
 The assumption is that the file name contains the date formatted such that it can be parsed and formatted for easier human consumption.  
 Use the following placeholders for the date components:
@@ -100,6 +104,8 @@ Example:
 * file_name_format: "%YYY_%m_%d__%H_%M_%S-0400"
 	* Assumes the file name is in the format 2019_06_19__20_00_00-0400
 * caption_format: "%m/%d %H:%M %p"	
+	* Will parse the file name and return a date formatted as 6/19 8:00 PM
+* caption_leading_zeros: true
 	* Will parse the file name and return a date formatted as 06/19 08:00 PM
 
 ## Credits
