@@ -10,11 +10,7 @@ class GalleryCard extends LitElement {
       _hass: {},
       config: {},
       resources: {},
-      currentResourceIndex: {},
-      autoPlayVideo: {},
-      xDown: {},
-      yDown: {},
-      errors: {}
+      currentResourceIndex: {}
     };
   }
 
@@ -63,7 +59,7 @@ class GalleryCard extends LitElement {
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
                       html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
-					            html`<video preload="none" src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
+					            html`<video preload="none" data-src="${resource.url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
@@ -94,11 +90,13 @@ class GalleryCard extends LitElement {
   }
 
   _downloadNextMenuVideo() {
-    let v = this.shadowRoot.querySelector(".resource-menu figure video[preload='none']");
+    //let v = this.shadowRoot.querySelector(".resource-menu figure video[preload='none']");
+    let v = this.shadowRoot.querySelector(".resource-menu figure video[data-src]");
     
     if (v)
     {
-      v.removeAttribute("preload");
+      v.src = v.dataset.src;
+      v.removeAttribute("data-src");
       v.load();
     }
   }
