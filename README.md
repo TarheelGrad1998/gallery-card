@@ -56,7 +56,6 @@ Whether using the editor or yaml, the following configurations can be used:
 | slideshow_timer | integer | **Optional** | If present and greater than 0, will automatically advance the gallery after the provided number of seconds have passed.
 | video_autoplay | boolean | **Optional** | Enables the autoplay attribute for the main video in the gallery.
 | video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.
-| video_muted | boolean | **Optional** | Enables the muted attribute for the main video in the gallery.
 | parsed_date_sort | boolean | **Optional** | Whether to use the date parsed using file_name_format in order to sort the items.  Use this to ensure sorting by date if the source is not properly sorted.  The default is false.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
 | show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.  The default is false.
