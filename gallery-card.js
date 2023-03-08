@@ -36,7 +36,7 @@ class GalleryCard extends LitElement {
                   ></hui-image>` :
                 this._isImageExtension(this._currentResource().extension) ?
                 html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
-                html`<video controls src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
+                html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
               }
               <figcaption>${this._currentResource().caption} 
                 ${this._isImageExtension(this._currentResource().extension) ?
@@ -956,6 +956,14 @@ class GalleryCardEditor extends LitElement {
 
   get _showReload() {
     return this._config.show_reload ?? false;
+  }
+
+  get _videoLoop() {
+    return this._config.video_loop ?? false;
+  }
+
+  get _videoAutoplay() {
+    return this._config.video_autoplay ?? false;
   }
 
   formatDate2Digits(str, zeroPad) {
