@@ -58,6 +58,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.
 | parsed_date_sort | boolean | **Optional** | Whether to use the date parsed using file_name_format in order to sort the items.  Use this to ensure sorting by date if the source is not properly sorted.  The default is false.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
+| random_sort | boolean | **Optional** | Whether to sort the items randomly.  The default is false.
 | show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.  The default is false.
 
 ### Media Source

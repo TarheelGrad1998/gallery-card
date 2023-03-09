@@ -310,6 +310,7 @@ class GalleryCard extends LitElement {
     const captionLeadingZeros = this.config.caption_leading_zeros ?? false;
     const parsedDateSort = this.config.parsed_date_sort ?? false;
     const reverseSort = this.config.reverse_sort ?? true;
+    const randomSort = this.config.random_sort ?? false;
 
     this.config.entities.forEach(entity => {
       var entityId;
@@ -360,6 +361,15 @@ class GalleryCard extends LitElement {
         }
         else {
           this.resources.sort(function (x, y) { return x.date - y.date; });
+        }
+      }
+
+      if (randomSort) {
+        for(var i = this.resources.length - 1; i > 0; i--) {
+          var r = Math.floor(Math.random() * (i + 1) );
+          if(i != r) {
+            [this.resources[i], this.resources[r]] = [this.resources[r], this.resources[i]];
+          }
         }
       }
 
