@@ -36,7 +36,7 @@ class GalleryCard extends LitElement {
                   ></hui-image>` :
                 this._isImageExtension(this._currentResource().extension) ?
                 html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
-                html`<video controls src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
+                html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
               }
               <figcaption>${this._currentResource().caption} 
                 ${this._isImageExtension(this._currentResource().extension) ?
@@ -310,6 +310,7 @@ class GalleryCard extends LitElement {
     const captionLeadingZeros = this.config.caption_leading_zeros ?? false;
     const parsedDateSort = this.config.parsed_date_sort ?? false;
     const reverseSort = this.config.reverse_sort ?? true;
+    const randomSort = this.config.random_sort ?? false;
 
     this.config.entities.forEach(entity => {
       var entityId;
@@ -360,6 +361,15 @@ class GalleryCard extends LitElement {
         }
         else {
           this.resources.sort(function (x, y) { return x.date - y.date; });
+        }
+      }
+
+      if (randomSort) {
+        for(var i = this.resources.length - 1; i > 0; i--) {
+          var r = Math.floor(Math.random() * (i + 1) );
+          if(i != r) {
+            [this.resources[i], this.resources[r]] = [this.resources[r], this.resources[i]];
+          }
         }
       }
 
@@ -956,6 +966,14 @@ class GalleryCardEditor extends LitElement {
 
   get _showReload() {
     return this._config.show_reload ?? false;
+  }
+
+  get _videoLoop() {
+    return this._config.video_loop ?? false;
+  }
+
+  get _videoAutoplay() {
+    return this._config.video_autoplay ?? false;
   }
 
   formatDate2Digits(str, zeroPad) {
