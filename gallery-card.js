@@ -1,4 +1,4 @@
-var GalleryCardVersion="3.4";
+var GalleryCardVersion="3.4.1";
 
 import {
   LitElement,
@@ -666,8 +666,10 @@ class GalleryCard extends LitElement {
       if (date && captionFormat) {
         if (captionFormat.toUpperCase().trim() == 'AGO')
           fileCaption = date.fromNow();
-        else 
+        else {
           fileCaption = date.format(captionFormat);
+          fileCaption = fileCaption.replace(/ago/ig, date.fromNow());
+        }
       }
 
       resource = {
