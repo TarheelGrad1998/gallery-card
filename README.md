@@ -118,6 +118,7 @@ Example:
 
 Notes:
 * You may use a value of "AGO" for caption_format to display the elapsed time since the file date (e.g. "an hour ago").  [More information here](https://day.js.org/docs/en/display/from-now)
+* To mix AGO with a date format, ensure AGO is within brackets.  E.g. "[AGO on] dddd" will result in "an hour ago on Saturday"
 * You may also use a space (caption_format: " ") to leave the captions blank.
 * As of v3.4, you no longer need to specify any extranous characters in file_name_format.  The day.js library is capable of "finding" the proper date in the file name.
 
