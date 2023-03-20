@@ -1,4 +1,4 @@
-var GalleryCardVersion="3.4.1";
+var GalleryCardVersion="3.4.2";
 
 import {
   LitElement,
@@ -221,7 +221,9 @@ class GalleryCard extends LitElement {
   }
 
   _videoMetadataLoaded(evt) {
-    evt.target.parentNode.querySelector(".duration").innerHTML = "[" + this._getFormattedVideoDuration(evt.target.duration) + "]";    
+    var showDuration = this.config.show_duration ?? true;
+    if (!isNaN(parseInt(evt.target.duration)) && showDuration)
+      evt.target.parentNode.querySelector(".duration").innerHTML = "[" + this._getFormattedVideoDuration(evt.target.duration) + "]";    
 
     if (this.config.video_muted)
       evt.target.muted = "muted";
@@ -332,6 +334,7 @@ class GalleryCard extends LitElement {
     const maximumFilesTotal = maximumFilesPerEntity ? undefined: this.config.maximum_files;
     var folderFormat = this.config.folder_format;
     var fileNameFormat = this.config.file_name_format;
+    var fileNameDateBegins = this.config.file_name_date_begins;
     var captionFormat = this.config.caption_format;    
     const parsedDateSort = this.config.parsed_date_sort ?? false;
     const reverseSort = this.config.reverse_sort ?? true;
@@ -354,6 +357,8 @@ class GalleryCard extends LitElement {
           folderFormat = entity.folder_format;
         if (entity.file_name_format)
           fileNameFormat = entity.file_name_format;
+        if (entity.file_name_date_begins)
+          fileNameDateBegins = entity.file_name_date_begins;
         if (entity.caption_format)
           captionFormat = entity.caption_format;          
       }
@@ -362,7 +367,7 @@ class GalleryCard extends LitElement {
       }
 
       if (entityId.substring(0, 15).toLowerCase() == "media-source://") {
-        commands.push(this._loadMediaResource(hass, entityId, maximumFiles, folderFormat, fileNameFormat, captionFormat, recursive, reverseSort, includeVideo, includeImages));
+        commands.push(this._loadMediaResource(hass, entityId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages));
       }
       else {
         var entityState = hass.states[entityId];
@@ -380,11 +385,11 @@ class GalleryCard extends LitElement {
 
           //Custom Files component
           if (entityState.attributes.fileList != undefined)
-            commands.push(this._loadFilesResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, captionFormat, reverseSort));
+            commands.push(this._loadFilesResources(entityState.attributes.fileList, maximumFiles, fileNameFormat, fileNameDateBegins, captionFormat, reverseSort));
 
           //HA Folder component
           if (entityState.attributes.file_list != undefined)
-            commands.push(this._loadFilesResources(entityState.attributes.file_list, maximumFiles, fileNameFormat, captionFormat, reverseSort));
+            commands.push(this._loadFilesResources(entityState.attributes.file_list, maximumFiles, fileNameFormat, fileNameDateBegins, captionFormat, reverseSort));
         }
       }
     });
@@ -440,7 +445,7 @@ class GalleryCard extends LitElement {
     });
   }
 
-  _loadMediaResource(hass, contentId, maximumFiles, folderFormat, fileNameFormat, captionFormat, recursive, reverseSort, includeVideo, includeImages) {
+  _loadMediaResource(hass, contentId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages) {
     return new Promise(async (resolve, reject) => {    
       var mediaPath = contentId;
       try {
@@ -488,7 +493,7 @@ class GalleryCard extends LitElement {
         
         var resources = [];
         values.forEach(mediaItem => {
-          var resource = this._createFileResource(mediaItem.authenticated_path, fileNameFormat, captionFormat);
+          var resource = this._createFileResource(mediaItem.authenticated_path, fileNameFormat, fileNameDateBegins, captionFormat);
 
           if (resource !== undefined) {
             resources.push(resource);
@@ -611,7 +616,7 @@ class GalleryCard extends LitElement {
     return Promise.resolve(resource);
   }
 
-  _loadFilesResources(files, maximumFiles, fileNameFormat, captionFormat, reverseSort) {
+  _loadFilesResources(files, maximumFiles, fileNameFormat, fileNameDateBegins, captionFormat, reverseSort) {
     var resources = [];
     if (files) {
       files = files.filter(file => file.indexOf("@eaDir") < 0);
@@ -631,7 +636,7 @@ class GalleryCard extends LitElement {
         if (filePath.indexOf("/config/www/") < 0)
           fileUrl = "/local/" + filePath.substring(filePath.indexOf("/www/")+5);
 
-        var resource = this._createFileResource(fileUrl, fileNameFormat, captionFormat);
+        var resource = this._createFileResource(fileUrl, fileNameFormat, fileNameDateBegins, captionFormat);
         
         if (resource !== undefined) {
           resources.push(resource);
@@ -642,7 +647,7 @@ class GalleryCard extends LitElement {
     return Promise.resolve(resources);
   }
 
-  _createFileResource(fileRawUrl, fileNameFormat, captionFormat) {
+  _createFileResource(fileRawUrl, fileNameFormat, fileNameDateBegins, captionFormat) {
     var resource;
 
     var fileUrl = fileRawUrl.split("?")[0];
@@ -660,8 +665,12 @@ class GalleryCard extends LitElement {
       if (captionFormat != " ")
         fileCaption = fileName;
       
+      var fileDatePart = fileName;
+      if (fileNameDateBegins && !isNaN(parseInt(fileNameDateBegins)))
+        fileDatePart = fileDatePart.substring(parseInt(fileNameDateBegins) - 1);
+      console.log(fileDatePart);
       if (fileNameFormat)
-        date = dayjs(fileName, fileNameFormat);
+        date = dayjs(fileDatePart, fileNameFormat);
 
       if (date && captionFormat) {
         if (captionFormat.toUpperCase().trim() == 'AGO')
