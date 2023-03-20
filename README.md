@@ -49,12 +49,14 @@ Whether using the editor or yaml, the following configurations can be used:
 | maximum_files | integer | **Optional** | The number of files to show.  You may want to limit videos to make it perform better and to conserve bandwith.  Used in combination with sort (using the config as above, the latest 10 for each entity by date will be shown)
 | maximum_files_per_entity | boolean | **Optional** | Whether the number of files counted are per Entity.  If true, then the maximum files displayed will be up to maximum_files per entity ; if false then only maximum_files total will be displayed (camera entities are always included and count as 1 file).  The default is true.
 | file_name_format | string | **Optional** | The format of the file names (see below).  Used in combination with caption_format for the captions below the image/video.  As of v3.4, this may also be specified at the entity level to override this for a specific entity.
+| file_name_date_begins | integer | **Optional** | The character at which the date begins in the file name (starting at 1).  It is usually not necessary to specify this, but if your dates are not parsing correctly and there are numbers at the start of your file names try this.  This may also be specified at the entity level to override this for a specific entity.
 | caption_format | string | **Optional** | The format of the caption (see below).  Used in combination with file_name_format. As of v3.4, this may also be specified at the entity level to override this for a specific entity.
 | folder_format | string | **Optional** | The format of the subfolder names under any media source folders (same options as for Captions below).  Used when reverse_sort is true and maximum_files is specified to more efficiently fetch files from the media source (rather than looking in all folders). This may also be specified at the entity level to override this for a specific entity.
 | slideshow_timer | integer | **Optional** | If present and greater than 0, will automatically advance the gallery after the provided number of seconds have passed.
-| video_autoplay | boolean | **Optional** | Enables the autoplay attribute for the main video in the gallery.
-| video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.
-| video_muted | boolean | **Optional** | Mutes all videos in the gallery.
+| show_duration | boolean | **Optional** | Whether to include the video duration as part of the caption.  The default is true.
+| video_autoplay | boolean | **Optional** | Enables the autoplay attribute for the main video in the gallery.  The default is false.
+| video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.  The default is false.
+| video_muted | boolean | **Optional** | Mutes all videos in the gallery.  The default is false.
 | parsed_date_sort | boolean | **Optional** | Whether to use the date parsed using file_name_format in order to sort the items.  Use this to ensure sorting by date if the source is not properly sorted.  The default is false.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
 | random_sort | boolean | **Optional** | Whether to sort the items randomly.  The default is false.
