@@ -57,6 +57,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | video_autoplay | boolean | **Optional** | Enables the autoplay attribute for the main video in the gallery.  The default is false.
 | video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.  The default is false.
 | video_muted | boolean | **Optional** | Mutes all videos in the gallery.  The default is false.
+| video_preload | boolean | **Optional** | Enables preloading and displaying of the preview image of all videos in the gallery. If disabled a static icon will be displayed instead. The default is true.
 | parsed_date_sort | boolean | **Optional** | Whether to use the date parsed using file_name_format in order to sort the items.  Use this to ensure sorting by date if the source is not properly sorted.  The default is false.
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
 | random_sort | boolean | **Optional** | Whether to sort the items randomly.  The default is false.
