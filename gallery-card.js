@@ -65,7 +65,9 @@ class GalleryCard extends LitElement {
                         ></hui-image>` :
                       this._isImageExtension(resource.extension) ?
                       html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
-					            html`<video preload="none" data-src="${resource.url}" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>`
+                        (this.config.video_preload ?? true) ?
+                        html`<video preload="none" data-src="${resource.url}" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>` :
+                          html`<center><div class="lzy_img"><ha-icon id="play" icon="mdi:movie-play-outline"></ha-icon></div></center>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
                     </figure>
