@@ -62,6 +62,9 @@ Whether using the editor or yaml, the following configurations can be used:
 | reverse_sort | boolean | **Optional** | Whether to sort the items with the newest first.  The default is true.
 | random_sort | boolean | **Optional** | Whether to sort the items randomly.  The default is false.
 | show_reload | boolean | **Optional** | Shows a reload link to allow manually triggering a reload of images/videos.  The default is false.
+| preview_video_at | integer | **Optional** | The preview picture time. Allow you to specify the seconds from start at which the preview image will be captured from the video. The default is 0.
+| enable_date_search | boolean | **Optional** | Displays a date picker to enable the filtering of images and videos based on date. When enabled, the selected date will be used to search for a folder that matches the "search_date_folder_format." The default value is false (Requires recursion to be enabled).
+| search_date_folder_format | string | **Optional** | The folder format for date search. Used in combination with "enable_date_search" to specify the folder format for filtering by date. The default value is "DD_MM_YYYY."
 
 ### Media Source
 To add a media source, specify the path to the media source folder as an entity.  

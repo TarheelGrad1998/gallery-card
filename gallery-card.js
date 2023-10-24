@@ -16,19 +16,22 @@ class GalleryCard extends LitElement {
       _hass: {},
       config: {},
       resources: {},
-      currentResourceIndex: {}
+      currentResourceIndex: {},
+      selectedDate: {}
     };
   }
 
   render() {    
     const menuAlignment = (this.config.menu_alignment || "responsive").toLowerCase();
-
+    
     return html`
         ${this.errors == undefined ? html`` :
          this.errors.map((error) => {
           return html`<hui-warning>${error}</hui-warning>`
          })}
         <ha-card .header=${this.config.title} class="menu-${menuAlignment}">
+          ${this.currentResourceIndex == undefined || !(this.config.enable_date_search ?? false) ?
+            html`` : html`<input type="date" class="date-picker" @change="${this._handleDateChange}" value="${this._formatDateForInput(this.selectedDate)}">` }
           ${this.currentResourceIndex == undefined || !(this.config.show_reload ?? false) ?
             html`` : html`<ha-progress-button class="btn-reload" @click="${ev => this._loadResources(this._hass)}">Reload</ha-progress-button>` }
           <div class="resource-viewer" @touchstart="${ev => this._handleTouchStart(ev)}" @touchmove="${ev => this._handleTouchMove(ev)}">
@@ -42,7 +45,7 @@ class GalleryCard extends LitElement {
                   ></hui-image>` :
                 this._isImageExtension(this._currentResource().extension) ?
                 html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
-                html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
+                html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"  preload="metadata"></video>`
               }
               <figcaption>${this._currentResource().caption} 
                 ${this._isImageExtension(this._currentResource().extension) ?
@@ -66,7 +69,7 @@ class GalleryCard extends LitElement {
                       this._isImageExtension(resource.extension) ?
                       html`<img class="lzy_img" src="/local/community/gallery-card/placeholder.jpg" data-src="${resource.url}"/>` :
                         (this.config.video_preload ?? true) ?
-                        html`<video preload="none" data-src="${resource.url}" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}"></video>` :
+                        html`<video preload="none" data-src="${resource.url}#t=${(this.config.preview_video_at == null) ? 0.1 : this.config.preview_video_at }" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._downloadNextMenuVideo()}" preload="metadata"></video>` :
                           html`<center><div class="lzy_img"><ha-icon id="play" icon="mdi:movie-play-outline"></ha-icon></div></center>`
                     }
                     <figcaption>${resource.caption} <span class="duration"></span></figcaption>
@@ -81,7 +84,7 @@ class GalleryCard extends LitElement {
         </ha-card>
     `;
   }
-
+ 
   _downloadingVideos = false;
   updated(changedProperties) {
     const arr = this.shadowRoot.querySelectorAll('img.lzy_img')
@@ -324,12 +327,19 @@ class GalleryCard extends LitElement {
       this.xDown = null;
       this.yDown = null;                                            
   };
+  
+  _handleDateChange(event) {
+    this.selectedDate = event.target.valueAsDate;
+    this._loadResources(this._hass);
+  };
 
   _loadResources(hass) {
     var commands = [];
 
     this.currentResourceIndex = undefined;
     this.resources = [];
+    if(this.selectedDate==null)
+        this.selectedDate = new Date();
 
     const maximumFilesPerEntity = this.config.maximum_files_per_entity ?? true;
     const maximumFiles = maximumFilesPerEntity ? this.config.maximum_files : undefined;
@@ -341,6 +351,7 @@ class GalleryCard extends LitElement {
     const parsedDateSort = this.config.parsed_date_sort ?? false;
     const reverseSort = this.config.reverse_sort ?? true;
     const randomSort = this.config.random_sort ?? false;
+    var filterForDate = this.config.enable_date_search ?? false;
 
     this.config.entities.forEach(entity => {
       var entityId;
@@ -369,7 +380,7 @@ class GalleryCard extends LitElement {
       }
 
       if (entityId.substring(0, 15).toLowerCase() == "media-source://") {
-        commands.push(this._loadMediaResource(hass, entityId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages));
+        commands.push(this._loadMediaResource(hass, entityId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages, filterForDate));
       }
       else {
         var entityState = hass.states[entityId];
@@ -447,7 +458,7 @@ class GalleryCard extends LitElement {
     });
   }
 
-  _loadMediaResource(hass, contentId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages) {
+  _loadMediaResource(hass, contentId, maximumFiles, folderFormat, fileNameFormat, fileNameDateBegins, captionFormat, recursive, reverseSort, includeVideo, includeImages, filterForDate) {
     return new Promise(async (resolve, reject) => {    
       var mediaPath = contentId;
       try {
@@ -464,7 +475,7 @@ class GalleryCard extends LitElement {
 
             if (folder != folderPrev) {
               try {
-                var folderValues = await this._loadMedia(this, hass, mediaPath, maximumFiles, false, reverseSort, includeVideo, includeImages);
+                var folderValues = await this._loadMedia(this, hass, mediaPath, maximumFiles, false, reverseSort, includeVideo, includeImages, filterForDate);
                 values.push(...folderValues);
               }
               catch(e) {
@@ -491,7 +502,7 @@ class GalleryCard extends LitElement {
             values.length = maximumFiles;
         }
         else 
-          values = await this._loadMedia(this, hass, mediaPath, maximumFiles, recursive, reverseSort, includeVideo, includeImages);
+          values = await this._loadMedia(this, hass, mediaPath, maximumFiles, recursive, reverseSort, includeVideo, includeImages, filterForDate);        
         
         var resources = [];
         values.forEach(mediaItem => {
@@ -515,7 +526,7 @@ class GalleryCard extends LitElement {
     });
   }
 
-  _loadMedia(ref, hass, contentId, maximumFiles, recursive, reverseSort, includeVideo, includeImages) {
+  _loadMedia(ref, hass, contentId, maximumFiles, recursive, reverseSort, includeVideo, includeImages, filterForDate) {
     var mediaItem = {
       media_class: "directory",
       media_content_id: contentId
@@ -525,7 +536,7 @@ class GalleryCard extends LitElement {
       mediaItem.media_content_id += "/";
     }
 
-    return Promise.all(this._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages))
+    return Promise.all(this._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages, filterForDate))
       .then(function(values) { 
         var mediaItems = values
           .flat(Infinity)
@@ -560,7 +571,7 @@ class GalleryCard extends LitElement {
       });
   }
 
-  _fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages) {
+  _fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages, filterForDate) {
     var commands = [];
 
     if (mediaItem.media_class == "directory") {
@@ -568,17 +579,17 @@ class GalleryCard extends LitElement {
         commands.push(
           ...mediaItem.children
           .filter(mediaItem => { 
-            return ((includeVideo && mediaItem.media_class == "video") || (includeImages && mediaItem.media_class == "image") || (recursive && mediaItem.media_class == "directory")) && mediaItem.title != "@eaDir/";
+            return ((includeVideo && mediaItem.media_class == "video") || (includeImages && mediaItem.media_class == "image") || (recursive && mediaItem.media_class == "directory" && (!filterForDate || (mediaItem.title ==  ref._folderDateFormatter((ref.config.search_date_folder_format == null)?"DD_MM_YYYY":ref.config.search_date_folder_format,ref.selectedDate) ) ))) && mediaItem.title != "@eaDir/";
           })
           .map(mediaItem => {
-            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages));
+            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages, filterForDate));
           }));
       }
       else {
         commands.push(
           ref._fetchMediaContents(hass, mediaItem.media_content_id)
           .then(mediaItem => {
-            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages));
+            return Promise.all(ref._fetchMedia(ref, hass, mediaItem, recursive, includeVideo, includeImages, filterForDate));
           })
         );
       }
@@ -696,6 +707,18 @@ class GalleryCard extends LitElement {
 
     return resource;
   }
+  
+  _folderDateFormatter(folderFormat, date ) {
+    return dayjs(date).format(folderFormat);
+  }
+  
+  _formatDateForInput(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+  }
+ 
 
   static get styles() {
     return css`
@@ -713,6 +736,11 @@ class GalleryCard extends LitElement {
         float: right;
         margin-right: 25px;
         text-align: right;
+      }
+      .date-picker {
+        padding-left: 5px;
+        margin-left: 5px;
+        margin-top: 8px;
       }
       figcaption {
         text-align:center;
