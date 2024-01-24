@@ -44,7 +44,7 @@ class GalleryCard extends LitElement {
                 html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
                 html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"></video>`
               }
-              <figcaption>${this._currentResource().caption} 
+              <figcaption>${this._currentResource().caption} <a href= "${this._currentResource().url}" target="_blank">Zoom</a>
                 ${this._isImageExtension(this._currentResource().extension) ?
                   html`` : html`<span class="duration"></span>` }                  
               </figcaption>
