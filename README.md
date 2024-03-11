@@ -62,6 +62,7 @@ Whether using the editor or yaml, the following configurations can be used:
 | folder_format | string | **Optional** | The format of the subfolder names under any media source folders (same options as for Captions below).  Used when reverse_sort is true and maximum_files is specified to more efficiently fetch files from the media source (rather than looking in all folders). This may also be specified at the entity level to override this for a specific entity.
 | slideshow_timer | integer | **Optional** | If present and greater than 0, will automatically advance the gallery after the provided number of seconds have passed.
 | show_duration | boolean | **Optional** | Whether to include the video duration as part of the caption.  The default is true.
+| show_zoom | boolean | **Optional** | Whether to include a "Zoom" link with the URL to the resource.  The default is false.
 | video_autoplay | boolean | **Optional** | Enables the autoplay attribute for the main video in the gallery.  The default is false.
 | video_loop | boolean | **Optional** | Enables the loop attribute for the main video in the gallery.  The default is false.
 | video_muted | boolean | **Optional** | Mutes all videos in the gallery.  The default is false.
