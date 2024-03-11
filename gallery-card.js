@@ -1,4 +1,4 @@
-var GalleryCardVersion="3.4.2";
+var GalleryCardVersion="3.5.1";
 
 import {
   LitElement,
@@ -47,9 +47,11 @@ class GalleryCard extends LitElement {
                 html`<img @click="${ev => this._popupImage(ev)}" src="${this._currentResource().url}"/>` :
                 html`<video controls ?loop=${this.config.video_loop} ?autoplay=${this.config.video_autoplay} src="${this._currentResource().url}#t=0.1" @loadedmetadata="${ev => this._videoMetadataLoaded(ev)}" @canplay="${ev => this._startVideo(ev)}"  preload="metadata"></video>`
               }
-              <figcaption>${this._currentResource().caption} <a href= "${this._currentResource().url}" target="_blank">Zoom</a>
+              <figcaption>${this._currentResource().caption} 
                 ${this._isImageExtension(this._currentResource().extension) ?
-                  html`` : html`<span class="duration"></span>` }                  
+                  html`` : html`<span class="duration"></span> ` }                  
+                ${!(this.config.show_zoom ?? false) ?
+                  html`` : html`<a href= "${this._currentResource().url}" target="_blank">Zoom</a>` }                  
               </figcaption>
             </figure>  
             <button class="btn btn-left" @click="${ev => this._selectResource(this.currentResourceIndex-1)}">&lt;</button> 
