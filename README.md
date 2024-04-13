@@ -2,7 +2,9 @@
 ## End of Support 1/24/2024
 I have intended to update this card for a while, but being honest with myself, and you users, it's really unlikely to happen.  My interest in the card has waned, as I have migrated to [Frigate](https://frigate.video/) use the [Frigate card](https://github.com/dermotduffy/frigate-hass-card) now in place of Gallery Card for the most part, and I may eliminate the Gallery Card from my installation in the near future.  My time has also been limited, and when I do get free time now I spend it enhancing my Home Assistant setup (which also has a long to do list).  
 
-For now the card works when properly configured, so feel free to use it.  However, at some point that could change and I can no longer guarantee that I will fix it.  If someone else wants to take over the card, I'll be glad to turn it over, just contact me.
+For now the card works when properly configured, so feel free to use it.  However, at some point that could change and I can no longer guarantee that I will fix it.  
+
+Also check out [lukelalo's fork](https://github.com/lukelalo/gallery-card) who is doing further development.
 
 ---
 
